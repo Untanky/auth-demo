@@ -1,8 +1,25 @@
+const API_URL = 'http://localhost:8080'
+
 async function signUp() {
+  const identifier = document.getElementById('identifier').value;
+
+  console.log(identifier);
+
+  const rawResponse = await fetch(
+    `${API_URL}/challenge`, 
+    {
+      method: 'POST',
+      body: { Identifier: identifier },
+    }
+  );
+
+  const response = await rawResponse.json();
+  console.log(response);
+
   const creds = await navigator.credentials.create({
     publicKey: {
         challenge: Uint8Array.from(
-            'abcdefghij', c => c.charCodeAt(0)),
+            response.Challenge, c => c.charCodeAt(0)),
         rp: {
             name: "IAM Auth",
             id: 'localhost'
@@ -15,14 +32,10 @@ async function signUp() {
         },
         pubKeyCredParams: [{alg: -7, type: "public-key"}],
         authenticatorSelection: {
-            authenticatorAttachment: "cross-platform",
+            authenticatorAttachment: 'both',
         },
         timeout: 60000,
         attestation: "direct"
     }
   });
-
-  const textDecoder = new TextDecoder('utf-8');
-  console.log(creds);
-  console.log(textDecoder.decode(creds.response.clientDataJSON));
 }

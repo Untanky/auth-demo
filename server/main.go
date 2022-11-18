@@ -9,8 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthenticateBody struct {
+type ChallengeRequest struct {
 	Identifier string
+}
+
+type ChallengeResponse struct {
+	Challenge string
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -30,8 +34,8 @@ func main() {
 
 	r.Use(cors.Default())
 
-	r.POST("/authenticate", func(c *gin.Context) {
-		body := AuthenticateBody{}
+	r.POST("/challenge", func(c *gin.Context) {
+		body := ChallengeRequest{}
 		if err := c.ShouldBind(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "could not parse body",
@@ -40,13 +44,13 @@ func main() {
 			return
 		}
 
-		challenge := randStringBytes(20)
+		response := ChallengeResponse{
+			Challenge: randStringBytes(20),
+		}
 
-		challengeMap[challenge] = body.Identifier
+		challengeMap[response.Challenge] = body.Identifier
 
-		c.JSON(http.StatusOK, gin.H{
-			"challenge": challenge,
-		})
+		c.JSON(http.StatusOK, response)
 	})
 	r.Run()
 }
