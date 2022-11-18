@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -29,29 +28,16 @@ func main() {
 
 	r := gin.Default()
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:  []string{"http://localhost:5001"},
-		AllowMethods:  []string{"POST"},
-		AllowHeaders:  []string{"Origin"},
-		ExposeHeaders: []string{"Content-Length"},
-		MaxAge:        12 * time.Hour,
-	}))
+	r.Use(cors.Default())
 
-	r.POST("/api/v1/authenticate", func(c *gin.Context) {
-		bodyBytes := []byte{}
-		_, err := c.Request.Body.Read(bodyBytes)
-		if err != nil {
+	r.POST("/authenticate", func(c *gin.Context) {
+		body := AuthenticateBody{}
+		if err := c.ShouldBind(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Could not parse body",
+				"message": "could not parse body",
 			})
-		}
-
-		body := &AuthenticateBody{}
-		err = json.Unmarshal(bodyBytes, body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Could not parse body as JSON",
-			})
+			fmt.Println(err)
+			return
 		}
 
 		challenge := randStringBytes(20)
