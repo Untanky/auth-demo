@@ -1,12 +1,10 @@
-const API_URL = 'http://localhost:8080'
+const API_URL = 'http://localhost:8080';
+const NEXT_STEP_HEADER = 'Next-Step';
 
 async function signUp() {
   const identifier = document.getElementById('identifier').value;
-
-  console.log(identifier);
-
   const rawResponse = await fetch(
-    `${API_URL}/challenge`, 
+    `${API_URL}/authenticate`, 
     {
       method: 'POST',
       body: { Identifier: identifier },
@@ -14,28 +12,24 @@ async function signUp() {
   );
 
   const response = await rawResponse.json();
-  console.log(response);
+  const nextStep = rawResponse.headers.get(NEXT_STEP_HEADER);
+  console.log(nextStep);
+  const registering = nextStep === 'register';
 
-  const creds = await navigator.credentials.create({
-    publicKey: {
-        challenge: Uint8Array.from(
-            response.Challenge, c => c.charCodeAt(0)),
-        rp: {
-            name: "IAM Auth",
-            id: 'localhost'
-        },
-        user: {
-            id: Uint8Array.from(
-                "UZSL85T9AFC", c => c.charCodeAt(0)),
-            name: "lukas.grimm@mail.de",
-            displayName: "Untanky",
-        },
-        pubKeyCredParams: [{alg: -7, type: "public-key"}],
-        authenticatorSelection: {
-            authenticatorAttachment: 'both',
-        },
-        timeout: 60000,
-        attestation: "direct"
-    }
-  });
+  if (registering) {
+    const creds = await navigator.credentials.create({ publicKey: {
+      ...response,
+      challenge: Uint8Array.from(response.challenge, c => c.charCodeAt(0)),
+      user: {
+        ...response.user,
+        id: Uint8Array.from(response.user.id, c => c.charCodeAt(0)),
+      }
+    } });
+    console.log(creds);
+  } else {
+    const creds = await navigator.credentials.get({
+
+    });
+    console.log(creds);
+  }
 }
