@@ -43,8 +43,16 @@ type AuthenticateResponse struct {
 	Attestation                    string                         `json:"attestation"`
 }
 
+type CredentialReponse struct {
+	AttestationObject string `json:"attestationObject"`
+	ClientDataJSON    string `json:"clientDataJSON"`
+}
+
 type RegisterRequest struct {
-	Identifier string
+	Id      string            `json:"id"`
+	Type    string            `json:"type"`
+	RawId   string            `json:"rawId"`
+	Reponse CredentialReponse `json:"response"`
 }
 
 type RegisterResponse struct {
@@ -117,6 +125,24 @@ func main() {
 	})
 
 	router.POST("/register", func(c *gin.Context) {
+		body := RegisterRequest{}
+
+		if err := c.ShouldBind(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "could not parse body",
+			})
+			fmt.Println("Error", err)
+			return
+		}
+
+		fmt.Println(body.Id)
+
+		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+
+		c.JSON(http.StatusOK, nil)
+	})
+
+	router.POST("/login", func(c *gin.Context) {
 		body := AuthenticateRequest{}
 		if err := c.ShouldBind(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -126,6 +152,8 @@ func main() {
 			return
 		}
 
+		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
+
 		response := AuthenticateResponse{
 			Challenge: randStringBytes(20),
 		}
@@ -134,5 +162,6 @@ func main() {
 
 		c.JSON(http.StatusOK, response)
 	})
+
 	router.Run()
 }
