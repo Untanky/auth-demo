@@ -1,13 +1,56 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"reflect"
+	"strings"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
+
+// URLEncodedBase64 represents a byte slice holding URL-encoded base64 data.
+// When fields of this type are unmarshaled from JSON, the data is base64
+// decoded into a byte slice.
+type URLEncodedBase64 []byte
+
+// UnmarshalJSON base64 decodes a URL-encoded value, storing the result in the
+// provided byte slice.
+func (dest *URLEncodedBase64) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		return nil
+	}
+
+	// Trim the leading spaces
+	data = bytes.Trim(data, "\"")
+	out := make([]byte, base64.RawURLEncoding.DecodedLen(len(data)))
+	n, err := base64.RawURLEncoding.Decode(out, data)
+	if err != nil {
+		return err
+	}
+
+	v := reflect.ValueOf(dest).Elem()
+	v.SetBytes(out[:n])
+	return nil
+}
+
+// MarshalJSON base64 encodes a non URL-encoded value, storing the result in the
+// provided byte slice.
+func (data URLEncodedBase64) MarshalJSON() ([]byte, error) {
+	if data == nil {
+		return []byte("null"), nil
+	}
+	return []byte(`"` + base64.RawURLEncoding.EncodeToString(data) + `"`), nil
+}
+
+const nestedLevelsAllowed = 4
 
 type AuthenticateRequest struct {
 	Identifier string `json:"identifier"`
@@ -44,8 +87,8 @@ type AuthenticateResponse struct {
 }
 
 type CredentialReponse struct {
-	AttestationObject string `json:"attestationObject"`
-	ClientDataJSON    string `json:"clientDataJSON"`
+	AttestationObject URLEncodedBase64 `json:"attestationObject"`
+	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
 }
 
 type RegisterRequest struct {
@@ -59,6 +102,18 @@ type RegisterResponse struct {
 	Challenge string
 }
 
+type ClientData struct {
+	Type      string `json:"type"`
+	Challenge string `json:"challenge"`
+	Origin    string `json:"origin"`
+}
+
+type PackedAttestationStatement struct {
+	Algorithm   int    `cbor:"alg"`
+	Signature   []byte `cbor:"sig"`
+	Certificate []byte `cbor:"x5c,omitifempty"`
+}
+
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func randStringBytes(n int) string {
@@ -70,7 +125,7 @@ func randStringBytes(n int) string {
 }
 
 func main() {
-	challengeMap := map[string]string{}
+	challengeMap := map[string]AuthenticateResponse{}
 	knownIdentifiers := []string{}
 
 	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
@@ -119,15 +174,16 @@ func main() {
 			}
 		}
 
-		challengeMap[response.Challenge] = body.Identifier
+		challengeMap[response.Challenge] = response
 
 		c.JSON(http.StatusOK, response)
 	})
 
 	router.POST("/register", func(c *gin.Context) {
 		body := RegisterRequest{}
+		err := json.NewDecoder(c.Request.Body).Decode(&body)
 
-		if err := c.ShouldBind(&body); err != nil {
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "could not parse body",
 			})
@@ -135,9 +191,54 @@ func main() {
 			return
 		}
 
-		fmt.Println(body.Id)
+		clientData := ClientData{}
+		json.Unmarshal([]byte(body.Reponse.ClientDataJSON), &clientData)
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+		challenge, _ := base64.RawStdEncoding.DecodeString(clientData.Challenge)
+		_, ok := challengeMap[string(challenge)]
+
+		if !ok || clientData.Type != "webauthn.create" || !strings.Contains(clientData.Origin, "localhost") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "client data incorrect",
+			})
+			fmt.Println("client data incorrect", clientData)
+			return
+		}
+
+		hash := sha256.New()
+		hash.Write([]byte(body.Reponse.ClientDataJSON))
+		fmt.Printf("Hash: %x\n", hash.Sum(nil))
+
+		type attestationObject struct {
+			AuthnData []byte          `cbor:"authData"`
+			Fmt       string          `cbor:"fmt"`
+			AttStmt   cbor.RawMessage `cbor:"attStmt"`
+		}
+		var attstObj attestationObject
+		if err := cbor.Unmarshal(body.Reponse.AttestationObject, &attstObj); err != nil {
+			fmt.Println("error:", err)
+		}
+
+		if _, err := cbor.Marshal(attstObj); err != nil {
+			fmt.Println("error:", err)
+		}
+
+		// TODO: Check attstObj.AuthnData
+		// TODO: Check flags
+		// TODO: Check algorithm
+
+		// TODO: Implemented https://w3c.github.io/webauthn/#sctn-fido-u2f-attestation
+
+		var attStmt PackedAttestationStatement
+		err = cbor.Unmarshal([]byte(attstObj.AttStmt), &attStmt)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println("AttStmt", string(attStmt.Signature))
+		fmt.Println("AuthData", string(attstObj.AuthnData))
+		fmt.Println("Fmt", string(attstObj.Fmt))
 
 		c.JSON(http.StatusOK, nil)
 	})
@@ -154,13 +255,7 @@ func main() {
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
 
-		response := AuthenticateResponse{
-			Challenge: randStringBytes(20),
-		}
-
-		challengeMap[response.Challenge] = body.Identifier
-
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, nil)
 	})
 
 	router.Run()
