@@ -11,7 +11,6 @@ import (
 	"math/rand"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-contrib/cors"
@@ -399,72 +398,27 @@ func main() {
 		clientData := ClientData{}
 		json.Unmarshal([]byte(body.Reponse.ClientDataJSON), &clientData)
 
-		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		challenge, _ := base64.RawStdEncoding.DecodeString(clientData.Challenge)
-		_, ok := challengeMap[string(challenge)]
+		var attstObj AttestationObject
+		if err := cbor.Unmarshal(body.Reponse.AttestationObject, &attstObj); err != nil {
+			fmt.Println("error:", err)
 
-		if !ok || clientData.Type != "webauthn.create" || !strings.Contains(clientData.Origin, "localhost") {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "client data incorrect",
-			})
-			fmt.Println("client data incorrect", clientData)
-			return
 		}
 
 		hash := sha256.New()
 		hash.Write([]byte(body.Reponse.ClientDataJSON))
-		fmt.Printf("Hash: %x\n", hash.Sum(nil))
 
-		type attestationObject struct {
-			AuthnData []byte          `cbor:"authData"`
-			Fmt       string          `cbor:"fmt"`
-			AttStmt   cbor.RawMessage `cbor:"attStmt"`
-		}
-		var attstObj attestationObject
-		if err := cbor.Unmarshal(body.Reponse.AttestationObject, &attstObj); err != nil {
-			fmt.Println("error:", err)
-		}
+		challenge, _ := base64.RawStdEncoding.DecodeString(clientData.Challenge)
+		authenticateResponse, _ := challengeMap[string(challenge)]
 
-		if _, err := cbor.Marshal(attstObj); err != nil {
-			fmt.Println("error:", err)
-		}
-
-		var authData AuthenticatorData
-		err = authData.Unmarshal(attstObj.AuthnData)
+		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+		err = VertifyCreateCredentials(&authenticateResponse, &clientData, &attstObj, hash.Sum(nil))
 		if err != nil {
-			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
 		}
 
-		key, err := ParsePublicKey(authData.AttData.CredentialPublicKey)
-
-		// TODO: Check attstObj.AuthnData
-		// TODO: Check flags
-		// TODO: Check algorithm
-
-		// TODO: Implemented https://w3c.github.io/webauthn/#sctn-fido-u2f-attestation
-
-		var attStmt PackedAttestationStatement
-		err = cbor.Unmarshal([]byte(attstObj.AttStmt), &attStmt)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		if key.GetAlgorithm() != attStmt.Algorithm {
-			fmt.Println("Algorithm does not match", key.GetAlgorithm(), attStmt.Algorithm)
-			return
-		}
-
-		verificationData := append(attstObj.AuthnData, hash.Sum(nil)...)
-
-		ok, err = key.Verify(verificationData, attStmt.Signature)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		if !ok {
-			fmt.Println("Something went wrong")
-			return
-		}
+		// TODO: save user and credentials
 
 		c.JSON(http.StatusOK, nil)
 	})
