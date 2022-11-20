@@ -38,9 +38,7 @@ async function signUp() {
     });
 
     if (credential.response instanceof AuthenticatorAttestationResponse) {
-      const decoder = new TextDecoder('utf-8');
-
-      const body = { id: credential.id, type: credential.type, rawId: decoder.decode(credential.rawId), response: { attestationObject: decoder.decode(credential.response.attestationObject), clientDataJSON: decoder.decode(credential.response.clientDataJSON) } };
+      const body = { id: credential.id, type: credential.type, rawId: bufferEncode(credential.rawId), response: { attestationObject: bufferEncode(credential.response.attestationObject), clientDataJSON: bufferEncode(credential.response.clientDataJSON) } };
 
       await fetch(`${API_URL}/${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     } else {
