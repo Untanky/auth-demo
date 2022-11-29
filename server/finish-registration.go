@@ -1,16 +1,103 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/fxamacker/cbor"
 )
 
+
+type CredentialResponse struct {
+	AttestationObject AttestationObject `json:"attestationObject"`
+	ClientDataJSON    ClientData       `json:"clientDataJSON"`
+	RawClientDataJSON URLEncodedBase64
+}
+
+type rawCredentialResponse struct {
+	AttestationObject URLEncodedBase64 `json:"attestationObject"`
+	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
+}
+
+func (response *CredentialResponse) UnmarshalJSON(b []byte) error {
+	var rawResponse rawCredentialResponse
+	err := json.Unmarshal(b, &rawResponse)
+	if err != nil {
+		return err
+	}
+
+	var clientData ClientData
+	err = json.Unmarshal(rawResponse.ClientDataJSON, &clientData)
+	if err != nil {
+		return err
+    }
+
+    var attestationObject AttestationObject
+    if err := cbor.Unmarshal(rawResponse.AttestationObject, &attestationObject); err != nil {
+        return err
+    }
+
+    response.AttestationObject = attestationObject
+
+	response.RawClientDataJSON = rawResponse.ClientDataJSON
+	response.ClientDataJSON = clientData
+	return nil
+}
+
+type RegisterRequest struct {
+	Id      string             `json:"id"`
+	Type    string             `json:"type"`
+	RawId    URLEncodedBase64   `json:"rawId"`
+	Response CredentialResponse `json:"response"`
+}
+
+type ClientData struct {
+	Type      string `json:"type"`
+	Challenge string `json:"challenge"`
+	Origin    string `json:"origin"`
+}
+
 type AttestationObject struct {
-	AuthnData []byte          `cbor:"authData"`
-	Fmt       string          `cbor:"fmt"`
-	AttStmt   cbor.RawMessage `cbor:"attStmt"`
+    AuthnData AuthenticatorData
+    RawAuthnData []byte
+    Fmt       string
+    AttStmt   PackedAttestationStatement
+}
+
+type rawAttestationObject struct {
+    AuthnData []byte          `cbor:"authData"`
+    Fmt       string          `cbor:"fmt"`
+    AttStmt   cbor.RawMessage `cbor:"attStmt"`
+}
+
+func (attestationObject *AttestationObject) UnmarshalCBOR(b []byte) error {
+    var rawResponse rawAttestationObject
+    err := cbor.Unmarshal(b, &rawResponse)
+    if err != nil {
+        return err
+    }
+
+    var authData AuthenticatorData
+    err = authData.Unmarshal(rawResponse.AuthnData)
+    if err != nil {
+        return err
+    }
+    attestationObject.AuthnData = authData
+    attestationObject.RawAuthnData = rawResponse.AuthnData
+
+
+
+    var attStmt PackedAttestationStatement
+    err = cbor.Unmarshal(rawResponse.AttStmt, &attStmt)
+    if err != nil {
+        fmt.Println(err)
+    }
+
+    attestationObject.AttStmt = attStmt
+    attestationObject.Fmt = rawResponse.Fmt
+
+    return nil
 }
 
 const webAuthnCreate = "webauthn.create"
@@ -28,13 +115,7 @@ func VertifyCreateCredentials(challenge *AuthenticateResponse, clientData *Clien
 		return fmt.Errorf("Origin is not allowed; got '%s'", clientData.Origin)
 	}
 
-	var authData AuthenticatorData
-	err := authData.Unmarshal(attestationObject.AuthnData)
-	if err != nil {
-		return err
-	}
-
-	key, err := ParsePublicKey(authData.AttData.CredentialPublicKey)
+	key, err := ParsePublicKey(attestationObject.AuthnData.AttData.CredentialPublicKey)
 
 	// TODO: Check attstObj.AuthnData
 	// TODO: Check flags
@@ -42,20 +123,14 @@ func VertifyCreateCredentials(challenge *AuthenticateResponse, clientData *Clien
 
 	// TODO: Implemented https://w3c.github.io/webauthn/#sctn-fido-u2f-attestation
 
-	var attStmt PackedAttestationStatement
-	err = cbor.Unmarshal([]byte(attestationObject.AttStmt), &attStmt)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	if key.GetAlgorithm() != attStmt.Algorithm {
+	if key.GetAlgorithm() != attestationObject.AttStmt.Algorithm {
 		fmt.Println()
-		return fmt.Errorf("Algorithms do not match %d != %d", key.GetAlgorithm(), attStmt.Algorithm)
+		return fmt.Errorf("Algorithms do not match %d != %d", key.GetAlgorithm(), attestationObject.AttStmt.Algorithm)
 	}
 
-	verificationData := append(attestationObject.AuthnData, hash...)
+	verificationData := append(attestationObject.RawAuthnData, hash...)
 
-	ok, err := key.Verify(verificationData, attStmt.Signature)
+	ok, err := key.Verify(verificationData, attestationObject.AttStmt.Signature)
 	if err != nil {
 		return err
 	}

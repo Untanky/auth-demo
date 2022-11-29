@@ -3,6 +3,7 @@ module github.com/Untanky/iam-auth
 go 1.19
 
 require (
+	github.com/fxamacker/cbor v1.5.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/gin-contrib/cors"
@@ -62,40 +61,6 @@ func (flag AuthenticatorFlags) HasExtensions() bool {
 	return (flag & FlagHasExtensions) == FlagHasExtensions
 }
 
-// URLEncodedBase64 represents a byte slice holding URL-encoded base64 data.
-// When fields of this type are unmarshaled from JSON, the data is base64
-// decoded into a byte slice.
-type URLEncodedBase64 []byte
-
-// UnmarshalJSON base64 decodes a URL-encoded value, storing the result in the
-// provided byte slice.
-func (dest *URLEncodedBase64) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte("null")) {
-		return nil
-	}
-
-	// Trim the leading spaces
-	data = bytes.Trim(data, "\"")
-	out := make([]byte, base64.RawURLEncoding.DecodedLen(len(data)))
-	n, err := base64.RawURLEncoding.Decode(out, data)
-	if err != nil {
-		return err
-	}
-
-	v := reflect.ValueOf(dest).Elem()
-	v.SetBytes(out[:n])
-	return nil
-}
-
-// MarshalJSON base64 encodes a non URL-encoded value, storing the result in the
-// provided byte slice.
-func (data URLEncodedBase64) MarshalJSON() ([]byte, error) {
-	if data == nil {
-		return []byte("null"), nil
-	}
-	return []byte(`"` + base64.RawURLEncoding.EncodeToString(data) + `"`), nil
-}
-
 const nestedLevelsAllowed = 4
 
 type AuthenticateRequest struct {
@@ -132,26 +97,8 @@ type AuthenticateResponse struct {
 	Attestation                    string                         `json:"attestation"`
 }
 
-type CredentialReponse struct {
-	AttestationObject URLEncodedBase64 `json:"attestationObject"`
-	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
-}
-
-type RegisterRequest struct {
-	Id      string            `json:"id"`
-	Type    string            `json:"type"`
-	RawId   string            `json:"rawId"`
-	Reponse CredentialReponse `json:"response"`
-}
-
 type RegisterResponse struct {
 	Challenge string
-}
-
-type ClientData struct {
-	Type      string `json:"type"`
-	Challenge string `json:"challenge"`
-	Origin    string `json:"origin"`
 }
 
 type PackedAttestationStatement struct {
@@ -339,7 +286,7 @@ func main() {
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5501"}
+	config.AllowOrigins = []string{"http://localhost:5500"}
 	config.ExposeHeaders = []string{"Next-Step"}
 
 	router.Use(cors.New(config))
@@ -387,6 +334,8 @@ func main() {
 		body := RegisterRequest{}
 		err := json.NewDecoder(c.Request.Body).Decode(&body)
 
+        fmt.Println(body.Response.ClientDataJSON)
+
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "could not parse body",
@@ -395,23 +344,14 @@ func main() {
 			return
 		}
 
-		clientData := ClientData{}
-		json.Unmarshal([]byte(body.Reponse.ClientDataJSON), &clientData)
-
-		var attstObj AttestationObject
-		if err := cbor.Unmarshal(body.Reponse.AttestationObject, &attstObj); err != nil {
-			fmt.Println("error:", err)
-
-		}
-
 		hash := sha256.New()
-		hash.Write([]byte(body.Reponse.ClientDataJSON))
+		hash.Write([]byte(body.Response.RawClientDataJSON))
 
-		challenge, _ := base64.RawStdEncoding.DecodeString(clientData.Challenge)
+		challenge, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientDataJSON.Challenge)
 		authenticateResponse, _ := challengeMap[string(challenge)]
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		err = VertifyCreateCredentials(&authenticateResponse, &clientData, &attstObj, hash.Sum(nil))
+		err = VertifyCreateCredentials(&authenticateResponse, &body.Response.ClientDataJSON, &body.Response.AttestationObject, hash.Sum(nil))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
