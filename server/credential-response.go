@@ -11,44 +11,63 @@ import (
 type CredentialResponse struct {
 	AttestationObject AttestationObject
 	ClientData        ClientData
-	ClientDataHash    []byte
 	VerificationData  []byte
 	PublicKey         PublicKey
 }
 
+type rawCredentialResponse struct {
+    AttestationObject URLEncodedBase64 `json:"attestationObject"`
+    ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
+}
+
 func (response *CredentialResponse) UnmarshalJSON(b []byte) error {
-    var rawResponse struct {
-        AttestationObject URLEncodedBase64 `json:"attestationObject"`
-        ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
-    }
+    var rawResponse rawCredentialResponse
 	err := json.Unmarshal(b, &rawResponse)
 	if err != nil {
 		return err
 	}
 
-	var clientData ClientData
-	err = json.Unmarshal(rawResponse.ClientDataJSON, &clientData)
-	if err != nil {
-		return err
-	}
+    err = response.unmarshalClientData(rawResponse)
+    if err != nil {
+        return err
+    }
 
-	var attestationObject AttestationObject
-	if err := cbor.Unmarshal(rawResponse.AttestationObject, &attestationObject); err != nil {
-		return err
-	}
+    err = response.unmarshalAttestationObject(rawResponse)
+    if err != nil {
+        return err
+    }
 
 	hash := sha256.New()
-	hash.Write(rawResponse.ClientDataJSON)
+    hash.Write(rawResponse.ClientDataJSON)
+    response.VerificationData = append(response.AttestationObject.RawAuthnData, hash.Sum(nil)...)
 
-	key, err := ParsePublicKey(attestationObject.AuthnData.AttData.CredentialPublicKey)
-
-	response.AttestationObject = attestationObject
-	response.ClientData = clientData
-	response.ClientDataHash = hash.Sum(nil)
-	response.VerificationData = append(attestationObject.RawAuthnData, hash.Sum(nil)...)
+	key, err := ParsePublicKey(response.AttestationObject.AuthnData.AttData.CredentialPublicKey)
 	response.PublicKey = key
+
 	return nil
 }
+
+func (response *CredentialResponse) unmarshalClientData(rawResponse rawCredentialResponse) error {
+    var clientData ClientData
+    err := json.Unmarshal(rawResponse.ClientDataJSON, &clientData)
+    if err != nil {
+        return err
+    }
+
+    response.ClientData = clientData
+    return nil
+}
+
+func (response *CredentialResponse) unmarshalAttestationObject(rawResponse rawCredentialResponse) error {
+    var attestationObject AttestationObject
+    if err := cbor.Unmarshal(rawResponse.AttestationObject, &attestationObject); err != nil {
+        return err
+    }
+
+    response.AttestationObject = attestationObject
+    return nil
+}
+
 
 type ClientData struct {
 	Type      string `json:"type"`
@@ -78,17 +97,17 @@ func (attestationObject *AttestationObject) UnmarshalCBOR(b []byte) error {
 	err = authData.Unmarshal(rawResponse.AuthnData)
 	if err != nil {
 		return err
-	}
+    }
+    attestationObject.AuthnData = authData
 
 	var attStmt PackedAttestationStatement
 	err = cbor.Unmarshal(rawResponse.AttStmt, &attStmt)
 	if err != nil {
 		return err
-	}
+    }
+    attestationObject.AttStmt = attStmt
 
-	attestationObject.AuthnData = authData
 	attestationObject.RawAuthnData = rawResponse.AuthnData
-	attestationObject.AttStmt = attStmt
 	attestationObject.Fmt = rawResponse.Fmt
 
 	return nil
