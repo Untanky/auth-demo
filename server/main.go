@@ -60,8 +60,10 @@ func randStringBytes(n int) string {
 }
 
 func main() {
+    var userRepo UserRepository
 	challengeMap := map[string]AuthenticateResponse{}
-	knownIdentifiers := []string{}
+
+    userRepo = &InMemoryUserRepository{ knownUsers: []string{} }
 
 	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
 	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "platform"}
@@ -87,14 +89,9 @@ func main() {
 
 		var response AuthenticateResponse
 
-		isIdentifierKnown := false
-		for i := 0; i < len(knownIdentifiers); i++ {
-			if body.Identifier == knownIdentifiers[i] {
-				isIdentifierKnown = true
-			}
-		}
+        user, _ := userRepo.FindByIdentifier(body.Identifier)
 
-		if isIdentifierKnown {
+		if user != nil {
 			c.Header("Next-Step", "login")
 		} else {
 			c.Header("Next-Step", "register")
@@ -136,7 +133,11 @@ func main() {
 			})
 		}
 
-		// TODO: save user and credentials
+        userRepo.Create(&User {
+            Identifier: authenticateResponse.User.Name,
+        })
+
+        fmt.Println(userRepo)
 
 		c.JSON(http.StatusOK, nil)
 	})
