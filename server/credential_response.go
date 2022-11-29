@@ -82,6 +82,12 @@ type AttestationObject struct {
 	AttStmt      PackedAttestationStatement
 }
 
+type PackedAttestationStatement struct {
+    Algorithm   int    `cbor:"alg"`
+    Signature   []byte `cbor:"sig"`
+    Certificate []byte `cbor:"x5c,omitifempty"`
+}
+
 func (attestationObject *AttestationObject) UnmarshalCBOR(b []byte) error {
     var rawResponse struct {
         AuthnData []byte          `cbor:"authData"`
