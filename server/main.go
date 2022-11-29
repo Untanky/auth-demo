@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -333,9 +332,6 @@ func main() {
 	router.POST("/register", func(c *gin.Context) {
 		body := RegisterRequest{}
 		err := json.NewDecoder(c.Request.Body).Decode(&body)
-
-        fmt.Println(body.Response.ClientDataJSON)
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "could not parse body",
@@ -344,14 +340,11 @@ func main() {
 			return
 		}
 
-		hash := sha256.New()
-		hash.Write([]byte(body.Response.RawClientDataJSON))
-
 		challenge, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientDataJSON.Challenge)
 		authenticateResponse, _ := challengeMap[string(challenge)]
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		err = VertifyCreateCredentials(&authenticateResponse, &body.Response.ClientDataJSON, &body.Response.AttestationObject, hash.Sum(nil))
+		err = VertifyCreateCredentials(&authenticateResponse, &body.Response)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
