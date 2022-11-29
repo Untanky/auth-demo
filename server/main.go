@@ -122,7 +122,7 @@ type AuthenticatorFlags byte
 // the authenticator data in the same format, and uses its knowledge of the authenticator to make
 // trust decisions.
 //
-// The authenticator data, at least during attestation, contains the Public Key that the RP stores
+// The authenticator data, at least during attestation, contains the Public PublicKey that the RP stores
 // and will associate with the user attempting to register.
 type AuthenticatorData struct {
 	RPIDHash []byte                 `json:"rpid"`
@@ -205,24 +205,12 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	return nil
 }
 
-// Unmarshall the credential's Public Key into CBOR encoding
+// Unmarshall the credential's Public PublicKey into CBOR encoding
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	var m interface{}
 	cbor.Unmarshal(keyBytes, &m)
 	rawBytes, _ := cbor.Marshal(m)
 	return rawBytes
-}
-
-// ResidentKeyRequired - Require that the key be private key resident to the client device
-func ResidentKeyRequired() *bool {
-	required := true
-	return &required
-}
-
-// ResidentKeyUnrequired - Do not require that the private key be resident to the client device.
-func ResidentKeyUnrequired() *bool {
-	required := false
-	return &required
 }
 
 // Verify on AuthenticatorData handles Steps 9 through 12 for Registration
@@ -279,7 +267,7 @@ func main() {
 	knownIdentifiers := []string{}
 
 	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
-	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "both"}
+	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "platform"}
 	publicKeyCredentialsParams := []PublicKeyCredentialsResponse{{Algorithm: -7, Type: "public-key"}}
 
 	router := gin.Default()
@@ -340,11 +328,11 @@ func main() {
 			return
 		}
 
-		challenge, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientDataJSON.Challenge)
+		challenge, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
 		authenticateResponse, _ := challengeMap[string(challenge)]
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		err = VertifyCreateCredentials(&authenticateResponse, &body.Response)
+		err = body.Response.VerifyCreateCredentials(&authenticateResponse)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),

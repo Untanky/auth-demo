@@ -133,7 +133,7 @@ type EC2PublicKeyData struct {
 	YCoord []byte `cbor:"-3,keyasint,omitempty" json:"y"`
 }
 
-// Verify Elliptic Curce Public Key Signature
+// Verify Elliptic Curce Public PublicKey Signature
 func (k *EC2PublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	var curve elliptic.Curve
 	switch COSEAlgorithmIdentifier(k.Algorithm) {
@@ -176,7 +176,7 @@ type RSAPublicKeyData struct {
 	Exponent []byte `cbor:"-2,keyasint,omitempty" json:"e"`
 }
 
-// Verify RSA Public Key Signature
+// Verify RSA Public PublicKey Signature
 func (k *RSAPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	pubkey := &rsa.PublicKey{
 		N: big.NewInt(0).SetBytes(k.Modulus),
@@ -220,22 +220,22 @@ type OKPPublicKeyData struct {
 	XCoord []byte `cbor:"-2,keyasint,omitempty" json:"x"`
 }
 
-// Verify Octet Key Pair (OKP) Public Key Signature
+// Verify Octet PublicKey Pair (OKP) Public PublicKey Signature
 func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	var key ed25519.PublicKey = make([]byte, ed25519.PublicKeySize)
 	copy(key, k.XCoord)
 	return ed25519.Verify(key, data, sig), nil
 }
 
-// The Key Type derived from the IANA COSE AuthData
+// The PublicKey Type derived from the IANA COSE AuthData
 type COSEKeyType int
 
 const (
-	// OctetKey is an Octet Key
+	// OctetKey is an Octet PublicKey
 	OctetKey COSEKeyType = 1
-	// EllipticKey is an Elliptic Curve Public Key
+	// EllipticKey is an Elliptic Curve Public PublicKey
 	EllipticKey COSEKeyType = 2
-	// RSAKey is an RSA Public Key
+	// RSAKey is an RSA Public PublicKey
 	RSAKey COSEKeyType = 3
 )
 
