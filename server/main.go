@@ -61,9 +61,11 @@ func randStringBytes(n int) string {
 
 func main() {
     var userRepo UserRepository
-	challengeMap := map[string]AuthenticateResponse{}
+    var challengeRepo ChallengeRepository
+//	challengeMap := map[string]AuthenticateResponse{}
 
     userRepo = &InMemoryUserRepository{ knownUsers: []string{} }
+    challengeRepo = &InMemoryChallengeRepository{ challenges: map[string]AuthenticateResponse {} }
 
 	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
 	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "platform"}
@@ -106,7 +108,10 @@ func main() {
 			}
 		}
 
-		challengeMap[response.Challenge] = response
+        challengeRepo.Create(&Challenge {
+            Value: response.Challenge,
+            Response: response,
+        })
 
 		c.JSON(http.StatusOK, response)
 	})
@@ -122,11 +127,11 @@ func main() {
 			return
 		}
 
-		challenge, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-		authenticateResponse, _ := challengeMap[string(challenge)]
+		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
+        challenge, _ := challengeRepo.FindByValue(string(challengeId))
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		err = body.Response.VerifyCreateCredentials(&authenticateResponse)
+		err = body.Response.VerifyCreateCredentials(&challenge.Response)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
@@ -134,10 +139,9 @@ func main() {
 		}
 
         userRepo.Create(&User {
-            Identifier: authenticateResponse.User.Name,
+            Identifier: challenge.Response.User.Name,
         })
-
-        fmt.Println(userRepo)
+        challengeRepo.DeleteByValue(string(challengeId))
 
 		c.JSON(http.StatusOK, nil)
 	})
