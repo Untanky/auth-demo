@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+    "errors"
+    "fmt"
+)
 
 type Challenge struct {
 	Value    string
@@ -23,12 +26,23 @@ func (repo *InMemoryChallengeRepository) FindByValue(value string) (*Challenge, 
 		return nil, fmt.Errorf("Could not find challenge '%s'", value)
 	}
 
-    r := authenticateResponse.(RegisterResponse)
+    r, ok := authenticateResponse.(RegisterResponse)
+    if ok {
+        return &Challenge{
+            Value:    r.Challenge,
+            Response: authenticateResponse,
+        }, nil
+    }
 
-	return &Challenge{
-		Value:    r.Challenge,
-		Response: authenticateResponse,
-	}, nil
+    l, ok := authenticateResponse.(LoginResponse)
+    if ok {
+        return &Challenge{
+            Value: l.Challenge,
+            Response: authenticateResponse,
+        }, nil
+    }
+
+    return nil, errors.New("Not found")
 }
 
 func (repo *InMemoryChallengeRepository) Create(challenge *Challenge) error {

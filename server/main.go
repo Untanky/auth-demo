@@ -125,7 +125,7 @@ func main() {
 			response = RegisterResponse{
 				Challenge:                      challenge,
 				RelyingParty:                   relyingParty,
-				User:                           UserResponse{Id: "abc", Name: body.Identifier, DisplayName: "Lukas"},
+				User:                           UserResponse{Id: body.Identifier, Name: body.Identifier, DisplayName: "Lukas"},
 				PublicKeyCredentialsParameters: publicKeyCredentialsParams,
 				AuthenticatorSelection:         authenticatorSelection,
 				Timeout:                        60000,
@@ -169,7 +169,7 @@ func main() {
 			Credentials: []Credential{
 				{
 					Id:        body.Response.AttestationObject.AuthnData.AttData.CredentialID,
-					PublicKey: body.Response.AttestationObject.AuthnData.AttData.CredentialPublicKey,
+					PublicKey: body.Response.PublicKey,
 					Type:      "public-key",
                     Transports: []string {"platform"},
 				},
@@ -181,17 +181,44 @@ func main() {
 		c.JSON(http.StatusOK, nil)
 	})
 
-	router.POST("/login", func(c *gin.Context) {
-		body := AuthenticateRequest{}
-		if err := c.ShouldBind(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not parse body",
-			})
-			fmt.Println(err)
-			return
-		}
+    router.POST("/login", func(c *gin.Context) {
+        body := LoginRequest{}
+        if err := c.ShouldBind(&body); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{
+                "message": "could not parse body",
+                })
+            fmt.Println(err)
+            return
+        }
 
-		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
+        // Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
+        challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
+        challenge, _ := challengeRepo.FindByValue(string(challengeId))
+
+        // Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+        r := (challenge.Response.(LoginResponse))
+        user, err := userRepo.FindByIdentifier(body.Response.UserHandle)
+        if (err != nil) {
+            c.JSON(http.StatusBadRequest, gin.H{
+                "error": err.Error(),
+                })
+            return
+        }
+
+        var publicKey PublicKey
+        for i := 0; i < len(user.Credentials); i++ {
+            if string(user.Credentials[i].Id) == string(body.RawId) {
+                publicKey = user.Credentials[i].PublicKey
+            }
+        }
+
+        err = body.Response.VerifyCreateCredentials(&r, publicKey)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{
+                "error": err.Error(),
+                })
+            return
+        }
 
 		c.JSON(http.StatusOK, nil)
 	})

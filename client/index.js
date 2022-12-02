@@ -37,8 +37,6 @@ async function signUp() {
       }
     });
 
-    console.log(credential.getClientExtensionResults());
-
     if (credential.response instanceof AuthenticatorAttestationResponse) {
       const body = { id: credential.id, type: credential.type, rawId: bufferEncode(credential.rawId), response: { attestationObject: bufferEncode(credential.response.attestationObject), clientDataJSON: bufferEncode(credential.response.clientDataJSON) } };
 
@@ -47,7 +45,7 @@ async function signUp() {
       throw new Error('Error');
     }
   } else {
-    const key = {
+    const assertion = await navigator.credentials.get({
       publicKey: {
         ...credentialsParams,
         challenge: Uint8Array.from(credentialsParams.challenge, c => c.charCodeAt(0)),
@@ -57,8 +55,25 @@ async function signUp() {
           transports: []
         }))
       }
+    });
+
+    console.log(assertion);
+    if (assertion.response instanceof AuthenticatorAssertionResponse) {
+      const body = { 
+        id: assertion.id,
+        rawId: bufferEncode(assertion.rawId),
+        type: assertion.type,
+        response: {
+          authenticatorData: bufferEncode(assertion.response.authenticatorData),
+          clientDataJSON: bufferEncode(assertion.response.clientDataJSON),
+          signature: bufferEncode(assertion.response.signature),
+          userHandle: bufferEncode(assertion.response.userHandle),
+        }
+      };
+
+      await fetch(`${API_URL}/${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    } else {
+      throw new Error('Error');
     }
-    console.log(key);
-    const creds = await navigator.credentials.get(key).catch(e => console.error(e));
   }
 }

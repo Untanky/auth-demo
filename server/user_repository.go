@@ -4,7 +4,7 @@ import "fmt"
 
 type Credential struct {
 	Id         []byte
-	PublicKey  []byte
+	PublicKey  PublicKey
 	Type       string
 	Transports []string
 }
