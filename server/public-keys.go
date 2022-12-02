@@ -103,8 +103,8 @@ type PublicKey interface {
 	GetAlgorithm() int
 }
 
-// PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
-// by an authenticator and returned to a Relying Party at registration time. We unpack this object
+// PublicKeyData The public key portion of a RelyingParty Party-specific credential key pair, generated
+// by an authenticator and returned to a RelyingParty Party at registration time. We unpack this object
 // using fxamacker's cbor library ("github.com/fxamacker/cbor/v2") which is why there are cbor tags
 // included. The tag field values correspond to the IANA COSE keys that give their respective
 // values.

@@ -54,11 +54,11 @@ func (flag AuthenticatorFlags) HasExtensions() bool {
 
 // AuthenticatorData From §6.1 of the spec.
 // The authenticator data structure encodes contextual bindings made by the authenticator. These bindings
-// are controlled by the authenticator itself, and derive their trust from the WebAuthn Relying Party's
+// are controlled by the authenticator itself, and derive their trust from the WebAuthn RelyingParty Party's
 // assessment of the security properties of the authenticator. In one extreme case, the authenticator
 // may be embedded in the client, and its bindings may be no more trustworthy than the client data.
 // At the other extreme, the authenticator may be a discrete entity with high-security hardware and
-// software, connected to the client over a secure channel. In both cases, the Relying Party receives
+// software, connected to the client over a secure channel. In both cases, the RelyingParty Party receives
 // the authenticator data in the same format, and uses its knowledge of the authenticator to make
 // trust decisions.
 //
@@ -149,7 +149,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 		return errors.New("Authenticator attestation data credential id length too long")
 	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
-    fmt.Println(string(rawAuthData[55 : 55+idLength]))
+	fmt.Println(string(rawAuthData[55 : 55+idLength]))
 	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
 	return nil
 }
@@ -194,7 +194,7 @@ func (a *AuthenticatorData) Verify(rpIdHash, appIDHash []byte, userVerificationR
 	// values in the clientExtensionResults and the extensions in authData MUST be also be
 	// present as extension identifier values in the extensions member of options, i.e., no
 	// extensions are present that were not requested. In the general case, the meaning
-	// of "are as expected" is specific to the Relying Party and which extensions are in use.
+	// of "are as expected" is specific to the RelyingParty Party and which extensions are in use.
 
 	// This is not yet fully implemented by the spec or by browsers
 

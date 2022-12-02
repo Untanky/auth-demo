@@ -14,6 +14,18 @@ type User struct {
 	Credentials []Credential
 }
 
+func (user *User) AllowedCredentials() []AllowCredentialResponse {
+	credentials := []AllowCredentialResponse{}
+	for i := 0; i < len(user.Credentials); i++ {
+		credentials = append(credentials, AllowCredentialResponse{
+			Id:         user.Credentials[i].Id,
+			Type:       user.Credentials[i].Type,
+			Transports: user.Credentials[i].Transports,
+		})
+	}
+	return credentials
+}
+
 type UserRepository interface {
 	FindByIdentifier(identifier string) (*User, error)
 	Create(user *User) error
@@ -34,7 +46,7 @@ func (repo *InMemoryUserRepository) FindByIdentifier(identifier string) (*User, 
 }
 
 func (repo *InMemoryUserRepository) Create(user *User) error {
-    repo.knownUsers = append(repo.knownUsers, user)
-    fmt.Println(*user)
+	repo.knownUsers = append(repo.knownUsers, user)
+	fmt.Println(*user)
 	return nil
 }

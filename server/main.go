@@ -15,11 +15,6 @@ type AuthenticateRequest struct {
 	Identifier string `json:"identifier"`
 }
 
-type RelyingPartyResponse struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
-}
-
 type UserResponse struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
@@ -27,14 +22,9 @@ type UserResponse struct {
 }
 
 type AllowCredentialResponse struct {
-    Id         []byte   `json:"id"`
+	Id         []byte   `json:"id"`
 	Type       string   `json:"type"`
 	Transports []string `json:"transports"`
-}
-
-type PublicKeyCredentialsResponse struct {
-	Algorithm int32  `json:"alg"`
-	Type      string `json:"type"`
 }
 
 type AuthenticatorSelectionResponse struct {
@@ -42,18 +32,18 @@ type AuthenticatorSelectionResponse struct {
 }
 
 type RegisterResponse struct {
-	Challenge                      string                         `json:"challenge"`
-	RelyingParty                   RelyingPartyResponse           `json:"rp"`
-	User                           UserResponse                   `json:"user"`
-	PublicKeyCredentialsParameters []PublicKeyCredentialsResponse `json:"pubKeyCredParams"`
-	AuthenticatorSelection         AuthenticatorSelectionResponse `json:"authenticatorSelection"`
-	Timeout                        int32                          `json:"timeout"`
-	Attestation                    string                         `json:"attestation"`
+	Challenge                      string                          `json:"challenge"`
+	RelyingParty                   *RelyingParty                   `json:"rp"`
+	User                           *UserResponse                   `json:"user"`
+	PublicKeyCredentialsParameters []*PublicKeyCredentialParameter `json:"pubKeyCredParams"`
+	AuthenticatorSelection         *AuthenticatorSelectionResponse `json:"authenticatorSelection"`
+	Timeout                        int32                           `json:"timeout"`
+	Attestation                    string                          `json:"attestation"`
 }
 
 type LoginResponse struct {
 	Challenge        string                    `json:"challenge"`
-    RelyingPartyId string `json:"rpId"`
+	RelyingPartyId   string                    `json:"rpId"`
 	AllowCredentials []AllowCredentialResponse `json:"allowCredentials"`
 	Timeout          int32                     `json:"timeout"`
 }
@@ -69,15 +59,13 @@ func randStringBytes(n int) string {
 }
 
 func main() {
-	var userRepo UserRepository
-	var challengeRepo ChallengeRepository
+	userRepo := &InMemoryUserRepository{knownUsers: []*User{}}
+	challengeRepo := &InMemoryChallengeRepository{challenges: map[string]interface{}{}}
 
-	userRepo = &InMemoryUserRepository{knownUsers: []*User{}}
-	challengeRepo = &InMemoryChallengeRepository{challenges: map[string]interface{}{}}
+	relyingParty := &RelyingParty{Id: "localhost", Name: "IAM Auth"}
+	publicKeyCredentialsParams := []*PublicKeyCredentialParameter{{Algorithm: -7, Type: "public-key"}}
 
-	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
-	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "platform"}
-	publicKeyCredentialsParams := []PublicKeyCredentialsResponse{{Algorithm: -7, Type: "public-key"}}
+	webauthn := CreateWebAuthn(relyingParty, "platform", publicKeyCredentialsParams)
 
 	router := gin.Default()
 
@@ -97,47 +85,8 @@ func main() {
 			return
 		}
 
-		var response interface{}
-
 		user, _ := userRepo.FindByIdentifier(body.Identifier)
-        challenge := randStringBytes(20)
-
-		if user != nil {
-			c.Header("Next-Step", "login")
-			credentials := []AllowCredentialResponse{}
-			for i := 0; i < len(user.Credentials); i++ {
-                allowCredential := AllowCredentialResponse{
-                    Id:         user.Credentials[i].Id,
-                    Type:       user.Credentials[i].Type,
-                    Transports: user.Credentials[i].Transports,
-                }
-				credentials = append(credentials, allowCredential)
-			}
-
-			response = LoginResponse{
-                Challenge: challenge,
-                RelyingPartyId:                   relyingParty.Id,
-				AllowCredentials: credentials,
-				Timeout: 60000,
-			}
-		} else {
-			c.Header("Next-Step", "register")
-			response = RegisterResponse{
-				Challenge:                      challenge,
-				RelyingParty:                   relyingParty,
-				User:                           UserResponse{Id: body.Identifier, Name: body.Identifier, DisplayName: "Lukas"},
-				PublicKeyCredentialsParameters: publicKeyCredentialsParams,
-				AuthenticatorSelection:         authenticatorSelection,
-				Timeout:                        60000,
-				Attestation:                    "direct",
-			}
-		}
-
-		challengeRepo.Create(&Challenge{
-			Value:    challenge,
-			Response: response,
-		})
-
+		response := webauthn.Authenticate(user)
 		c.JSON(http.StatusOK, response)
 	})
 
@@ -156,7 +105,7 @@ func main() {
 		challenge, _ := challengeRepo.FindByValue(string(challengeId))
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-        r := (challenge.Response.(RegisterResponse))
+		r := (challenge.Response.(RegisterResponse))
 		err = body.Response.VerifyCreateCredentials(&r)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -168,57 +117,57 @@ func main() {
 			Identifier: r.User.Name,
 			Credentials: []Credential{
 				{
-					Id:        body.Response.AttestationObject.AuthnData.AttData.CredentialID,
-					PublicKey: body.Response.PublicKey,
-					Type:      "public-key",
-                    Transports: []string {"platform"},
+					Id:         body.Response.AttestationObject.AuthnData.AttData.CredentialID,
+					PublicKey:  body.Response.PublicKey,
+					Type:       "public-key",
+					Transports: []string{"platform"},
 				},
 			},
-        })
+		})
 
 		challengeRepo.DeleteByValue(string(challengeId))
 
 		c.JSON(http.StatusOK, nil)
 	})
 
-    router.POST("/login", func(c *gin.Context) {
-        body := LoginRequest{}
-        if err := c.ShouldBind(&body); err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{
-                "message": "could not parse body",
-                })
-            fmt.Println(err)
-            return
-        }
+	router.POST("/login", func(c *gin.Context) {
+		body := LoginRequest{}
+		if err := c.ShouldBind(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "could not parse body",
+			})
+			fmt.Println(err)
+			return
+		}
 
-        // Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
-        challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-        challenge, _ := challengeRepo.FindByValue(string(challengeId))
+		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
+		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
+		challenge, _ := challengeRepo.FindByValue(string(challengeId))
 
-        // Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-        r := (challenge.Response.(LoginResponse))
-        user, err := userRepo.FindByIdentifier(body.Response.UserHandle)
-        if (err != nil) {
-            c.JSON(http.StatusBadRequest, gin.H{
-                "error": err.Error(),
-                })
-            return
-        }
+		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+		r := (challenge.Response.(LoginResponse))
+		user, err := userRepo.FindByIdentifier(body.Response.UserHandle)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
 
-        var publicKey PublicKey
-        for i := 0; i < len(user.Credentials); i++ {
-            if string(user.Credentials[i].Id) == string(body.RawId) {
-                publicKey = user.Credentials[i].PublicKey
-            }
-        }
+		var publicKey PublicKey
+		for i := 0; i < len(user.Credentials); i++ {
+			if string(user.Credentials[i].Id) == string(body.RawId) {
+				publicKey = user.Credentials[i].PublicKey
+			}
+		}
 
-        err = body.Response.VerifyCreateCredentials(&r, publicKey)
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{
-                "error": err.Error(),
-                })
-            return
-        }
+		err = body.Response.VerifyCreateCredentials(&r, publicKey)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
 
 		c.JSON(http.StatusOK, nil)
 	})
