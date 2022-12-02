@@ -1,8 +1,8 @@
 package main
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 )
 
 const webAuthnCreate = "webauthn.create"
@@ -14,7 +14,7 @@ type RegisterRequest struct {
 	Response CredentialResponse `json:"response"`
 }
 
-func (response *CredentialResponse) VerifyCreateCredentials(challenge *AuthenticateResponse) error {
+func (response *CredentialResponse) VerifyCreateCredentials(challenge *RegisterResponse) error {
 	if challenge == nil {
 		return fmt.Errorf("No valid challenge found")
 	}

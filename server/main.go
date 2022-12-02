@@ -20,10 +20,16 @@ type RelyingPartyResponse struct {
 	Id   string `json:"id"`
 }
 
-type UserReponse struct {
+type UserResponse struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
+}
+
+type AllowCredentialResponse struct {
+	Id         string   `json:"id"`
+	Type       string   `json:"type"`
+	Transports []string `json:"transports"`
 }
 
 type PublicKeyCredentialsResponse struct {
@@ -35,18 +41,20 @@ type AuthenticatorSelectionResponse struct {
 	AuthenticatorAttachment string `json:"authenticatorAttachment"`
 }
 
-type AuthenticateResponse struct {
+type RegisterResponse struct {
 	Challenge                      string                         `json:"challenge"`
 	RelyingParty                   RelyingPartyResponse           `json:"rp"`
-	User                           UserReponse                    `json:"user"`
+	User                           UserResponse                   `json:"user"`
 	PublicKeyCredentialsParameters []PublicKeyCredentialsResponse `json:"pubKeyCredParams"`
 	AuthenticatorSelection         AuthenticatorSelectionResponse `json:"authenticatorSelection"`
 	Timeout                        int32                          `json:"timeout"`
 	Attestation                    string                         `json:"attestation"`
 }
 
-type RegisterResponse struct {
-	Challenge string
+type LoginResponse struct {
+	Challenge        string                    `json:"challenge"`
+	AllowCredentials []AllowCredentialResponse `json:"allowCredentials"`
+	Timeout          int32                     `json:"timeout"`
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -60,12 +68,11 @@ func randStringBytes(n int) string {
 }
 
 func main() {
-    var userRepo UserRepository
-    var challengeRepo ChallengeRepository
-//	challengeMap := map[string]AuthenticateResponse{}
+	var userRepo UserRepository
+	var challengeRepo ChallengeRepository
 
-    userRepo = &InMemoryUserRepository{ knownUsers: []string{} }
-    challengeRepo = &InMemoryChallengeRepository{ challenges: map[string]AuthenticateResponse {} }
+	userRepo = &InMemoryUserRepository{knownUsers: []*User{}}
+	challengeRepo = &InMemoryChallengeRepository{challenges: map[string]interface{}{}}
 
 	relyingParty := RelyingPartyResponse{Id: "localhost", Name: "IAM Auth"}
 	authenticatorSelection := AuthenticatorSelectionResponse{AuthenticatorAttachment: "platform"}
@@ -89,18 +96,34 @@ func main() {
 			return
 		}
 
-		var response AuthenticateResponse
+		var response interface{}
 
-        user, _ := userRepo.FindByIdentifier(body.Identifier)
+		user, _ := userRepo.FindByIdentifier(body.Identifier)
+        challenge := randStringBytes(20)
 
 		if user != nil {
 			c.Header("Next-Step", "login")
+			credentials := []AllowCredentialResponse{}
+			for i := 0; i < len(user.Credentials); i++ {
+                allowCredential := AllowCredentialResponse{
+                    Id:         string(user.Credentials[i].Id),
+                    Type:       user.Credentials[i].Type,
+                    Transports: user.Credentials[i].Transports,
+                }
+				credentials = append(credentials, allowCredential)
+			}
+
+			response = LoginResponse{
+				Challenge: challenge,
+				AllowCredentials: credentials,
+				Timeout: 60000,
+			}
 		} else {
 			c.Header("Next-Step", "register")
-			response = AuthenticateResponse{
-				Challenge:                      randStringBytes(20),
+			response = RegisterResponse{
+				Challenge:                      challenge,
 				RelyingParty:                   relyingParty,
-				User:                           UserReponse{Id: "abc", Name: body.Identifier, DisplayName: "Lukas"},
+				User:                           UserResponse{Id: "abc", Name: body.Identifier, DisplayName: "Lukas"},
 				PublicKeyCredentialsParameters: publicKeyCredentialsParams,
 				AuthenticatorSelection:         authenticatorSelection,
 				Timeout:                        60000,
@@ -108,10 +131,10 @@ func main() {
 			}
 		}
 
-        challengeRepo.Create(&Challenge {
-            Value: response.Challenge,
-            Response: response,
-        })
+		challengeRepo.Create(&Challenge{
+			Value:    challenge,
+			Response: response,
+		})
 
 		c.JSON(http.StatusOK, response)
 	})
@@ -128,20 +151,29 @@ func main() {
 		}
 
 		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-        challenge, _ := challengeRepo.FindByValue(string(challengeId))
+		challenge, _ := challengeRepo.FindByValue(string(challengeId))
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		err = body.Response.VerifyCreateCredentials(&challenge.Response)
+        r := (challenge.Response.(RegisterResponse))
+		err = body.Response.VerifyCreateCredentials(&r)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
 		}
 
-        userRepo.Create(&User {
-            Identifier: challenge.Response.User.Name,
+		userRepo.Create(&User{
+			Identifier: r.User.Name,
+			Credentials: []Credential{
+				{
+					Id:        body.Response.AttestationObject.AuthnData.AttData.CredentialID,
+					PublicKey: body.Response.AttestationObject.AuthnData.AttData.CredentialPublicKey,
+					Type:      "public-key",
+				},
+			},
         })
-        challengeRepo.DeleteByValue(string(challengeId))
+
+		challengeRepo.DeleteByValue(string(challengeId))
 
 		c.JSON(http.StatusOK, nil)
 	})
