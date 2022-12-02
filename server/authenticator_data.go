@@ -149,6 +149,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 		return errors.New("Authenticator attestation data credential id length too long")
 	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
+    fmt.Println(string(rawAuthData[55 : 55+idLength]))
 	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
 	return nil
 }

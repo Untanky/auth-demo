@@ -27,7 +27,7 @@ type UserResponse struct {
 }
 
 type AllowCredentialResponse struct {
-	Id         string   `json:"id"`
+    Id         []byte   `json:"id"`
 	Type       string   `json:"type"`
 	Transports []string `json:"transports"`
 }
@@ -53,6 +53,7 @@ type RegisterResponse struct {
 
 type LoginResponse struct {
 	Challenge        string                    `json:"challenge"`
+    RelyingPartyId string `json:"rpId"`
 	AllowCredentials []AllowCredentialResponse `json:"allowCredentials"`
 	Timeout          int32                     `json:"timeout"`
 }
@@ -106,7 +107,7 @@ func main() {
 			credentials := []AllowCredentialResponse{}
 			for i := 0; i < len(user.Credentials); i++ {
                 allowCredential := AllowCredentialResponse{
-                    Id:         string(user.Credentials[i].Id),
+                    Id:         user.Credentials[i].Id,
                     Type:       user.Credentials[i].Type,
                     Transports: user.Credentials[i].Transports,
                 }
@@ -114,7 +115,8 @@ func main() {
 			}
 
 			response = LoginResponse{
-				Challenge: challenge,
+                Challenge: challenge,
+                RelyingPartyId:                   relyingParty.Id,
 				AllowCredentials: credentials,
 				Timeout: 60000,
 			}
@@ -169,6 +171,7 @@ func main() {
 					Id:        body.Response.AttestationObject.AuthnData.AttData.CredentialID,
 					PublicKey: body.Response.AttestationObject.AuthnData.AttData.CredentialPublicKey,
 					Type:      "public-key",
+                    Transports: []string {"platform"},
 				},
 			},
         })

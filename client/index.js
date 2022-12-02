@@ -37,6 +37,8 @@ async function signUp() {
       }
     });
 
+    console.log(credential.getClientExtensionResults());
+
     if (credential.response instanceof AuthenticatorAttestationResponse) {
       const body = { id: credential.id, type: credential.type, rawId: bufferEncode(credential.rawId), response: { attestationObject: bufferEncode(credential.response.attestationObject), clientDataJSON: bufferEncode(credential.response.clientDataJSON) } };
 
@@ -45,8 +47,18 @@ async function signUp() {
       throw new Error('Error');
     }
   } else {
-    const creds = await navigator.credentials.get({
-
-    });
+    const key = {
+      publicKey: {
+        ...credentialsParams,
+        challenge: Uint8Array.from(credentialsParams.challenge, c => c.charCodeAt(0)),
+        allowCredentials: credentialsParams.allowCredentials.map((credentials) => ({
+          ...credentials,
+          id: Uint8Array.from(atob(credentials.id), c => c.charCodeAt(0)),
+          transports: []
+        }))
+      }
+    }
+    console.log(key);
+    const creds = await navigator.credentials.get(key).catch(e => console.error(e));
   }
 }
