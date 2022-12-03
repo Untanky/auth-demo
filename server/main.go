@@ -3,13 +3,33 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+    "errors"
+    "fmt"
 	"math/rand"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
+
+const (
+    webAuthnCreate = "webauthn.create"
+    webAuthnGet = "webauthn.get"
+)
+
+type RegisterRequest struct {
+    Id       string             `json:"id"`
+    Type     string             `json:"type"`
+    RawId    URLEncodedBase64   `json:"rawId"`
+    Response CredentialResponse `json:"response"`
+}
+
+type LoginRequest struct {
+    Id       string            `json:"id"`
+    Type     string            `json:"type"`
+    RawId    URLEncodedBase64  `json:"rawId"`
+    Response AssertionResponse `json:"response"`
+}
 
 type AuthenticateRequest struct {
 	Identifier string `json:"identifier"`
@@ -145,10 +165,16 @@ func main() {
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
 		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-		challenge, _ := challengeRepo.FindByValue(string(challengeId))
+		challenge, err := challengeRepo.FindByValue(string(challengeId))
+        if err != nil {
+            c.JSON(http.StatusNotFound, gin.H{
+                "error": errors.New("no valid challenge found"),
+                })
+            return
+        }
 
 		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		r := (challenge.Response.(LoginResponse))
+		l := challenge.Response.(LoginResponse)
 		user, err := userRepo.FindByIdentifier(body.Response.UserHandle)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -157,14 +183,7 @@ func main() {
 			return
 		}
 
-		var publicKey PublicKey
-		for i := 0; i < len(user.Credentials); i++ {
-			if string(user.Credentials[i].Id) == string(body.RawId) {
-				publicKey = user.Credentials[i].PublicKey
-			}
-		}
-
-		err = body.Response.VerifyCreateCredentials(&r, publicKey)
+		err = webauthn.FinishLogin(&body, &l, user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
