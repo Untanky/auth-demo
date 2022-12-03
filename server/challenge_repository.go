@@ -2,8 +2,23 @@ package main
 
 import (
 	"errors"
-	"fmt"
+    "fmt"
+    "math/rand"
 )
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randStringBytes(n int) string {
+    b := make([]byte, n)
+    for i := range b {
+        b[i] = letterBytes[rand.Intn(len(letterBytes))]
+    }
+    return string(b)
+}
+
+func GenerateChallenge() string {
+    return randStringBytes(32)
+}
 
 type Challenge struct {
 	Value    string

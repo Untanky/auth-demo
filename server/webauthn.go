@@ -33,7 +33,7 @@ func CreateWebAuthn(relyingParty *RelyingParty, authenticator string, credential
 }
 
 func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
-	challenge := randStringBytes(20)
+	challenge := GenerateChallenge()
 
 	response := RegisterResponse{
 		Challenge:                      challenge,
@@ -55,7 +55,7 @@ func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
 }
 
 func (webauthn *WebAuthn) BeginLogin(user *User) interface{} {
-	challenge := randStringBytes(20)
+	challenge := GenerateChallenge()
 
 	response := LoginResponse{
 		Challenge:        challenge,

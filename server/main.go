@@ -1,8 +1,6 @@
 package main
 
 import (
-	"math/rand"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -61,16 +59,6 @@ type LoginResponse struct {
 	RelyingPartyId   string                    `json:"rpId"`
 	AllowCredentials []AllowCredentialResponse `json:"allowCredentials"`
 	Timeout          int32                     `json:"timeout"`
-}
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func randStringBytes(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }
 
 func main() {
