@@ -1,34 +1,29 @@
 package main
 
 import (
-	"encoding/base64"
-	"encoding/json"
-    "errors"
-    "fmt"
 	"math/rand"
-	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-    webAuthnCreate = "webauthn.create"
-    webAuthnGet = "webauthn.get"
+	webAuthnCreate = "webauthn.create"
+	webAuthnGet    = "webauthn.get"
 )
 
 type RegisterRequest struct {
-    Id       string             `json:"id"`
-    Type     string             `json:"type"`
-    RawId    URLEncodedBase64   `json:"rawId"`
-    Response CredentialResponse `json:"response"`
+	Id       string             `json:"id"`
+	Type     string             `json:"type"`
+	RawId    URLEncodedBase64   `json:"rawId"`
+	Response CredentialResponse `json:"response"`
 }
 
 type LoginRequest struct {
-    Id       string            `json:"id"`
-    Type     string            `json:"type"`
-    RawId    URLEncodedBase64  `json:"rawId"`
-    Response AssertionResponse `json:"response"`
+	Id       string            `json:"id"`
+	Type     string            `json:"type"`
+	RawId    URLEncodedBase64  `json:"rawId"`
+	Response AssertionResponse `json:"response"`
 }
 
 type AuthenticateRequest struct {
@@ -95,104 +90,9 @@ func main() {
 
 	router.Use(cors.New(config))
 
-	router.POST("/authenticate", func(c *gin.Context) {
-		body := AuthenticateRequest{}
-		if err := c.ShouldBind(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not parse body",
-			})
-			fmt.Println(err)
-			return
-		}
+	authenticationController := AuthenticationController{}
+	authenticationController.Init(userRepo, challengeRepo, webauthn)
+	authenticationController.Routes(router.Group("authenticate"))
 
-		user, _ := userRepo.FindByIdentifier(body.Identifier)
-
-		var response interface{}
-		if user != nil {
-			response = webauthn.BeginLogin(user)
-			c.Header("Next-Step", "login")
-		} else {
-			response = webauthn.BeginRegister(&User{
-				Credentials: []Credential{},
-				Identifier:  body.Identifier,
-                })
-            c.Header("Next-Step", "register")
-		}
-		c.JSON(http.StatusOK, response)
-	})
-
-	router.POST("/register", func(c *gin.Context) {
-		body := RegisterRequest{}
-		err := json.NewDecoder(c.Request.Body).Decode(&body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not parse body",
-			})
-			fmt.Println("Error", err)
-			return
-		}
-
-		user, err := webauthn.FinishRegister(body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not validate registration",
-			})
-			fmt.Println(err)
-			return
-		}
-
-		err = userRepo.Create(user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not store user data",
-			})
-			fmt.Println(err)
-			return
-		}
-
-		c.JSON(http.StatusOK, nil)
-	})
-
-	router.POST("/login", func(c *gin.Context) {
-		body := LoginRequest{}
-		if err := c.ShouldBind(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "could not parse body",
-			})
-			fmt.Println(err)
-			return
-		}
-
-		// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
-		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-		challenge, err := challengeRepo.FindByValue(string(challengeId))
-        if err != nil {
-            c.JSON(http.StatusNotFound, gin.H{
-                "error": errors.New("no valid challenge found"),
-                })
-            return
-        }
-
-		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		l := challenge.Response.(LoginResponse)
-		user, err := userRepo.FindByIdentifier(body.Response.UserHandle)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		err = webauthn.FinishLogin(&body, &l, user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, nil)
-	})
-
-	router.Run()
+    router.Run()
 }

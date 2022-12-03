@@ -158,45 +158,45 @@ func (webauthn *WebAuthn) verifySignature(attestationResponse CredentialResponse
 }
 
 func (webauthn *WebAuthn) FinishLogin(loginRequest *LoginRequest, loginResponse *LoginResponse, user *User) error {
-    var publicKey PublicKey
-    for i := 0; i < len(user.Credentials); i++ {
-        if string(user.Credentials[i].Id) == string(loginRequest.RawId) {
-            publicKey = user.Credentials[i].PublicKey
-        }
-    }
+	var publicKey PublicKey
+	for i := 0; i < len(user.Credentials); i++ {
+		if string(user.Credentials[i].Id) == string(loginRequest.RawId) {
+			publicKey = user.Credentials[i].PublicKey
+		}
+	}
 
-    err := webauthn.verifyClientDataForLogin(&loginRequest.Response)
-    if err != nil {
-        return err
-    }
+	err := webauthn.verifyClientDataForLogin(&loginRequest.Response)
+	if err != nil {
+		return err
+	}
 
-    err = webauthn.verifySignatureForLogin(&loginRequest.Response, publicKey)
-    if err != nil {
-        return err
-    }
+	err = webauthn.verifySignatureForLogin(&loginRequest.Response, publicKey)
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 func (webauthn *WebAuthn) verifyClientDataForLogin(response *AssertionResponse) error {
-    if response.ClientData.Type != webAuthnGet {
-        return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", response.ClientData.Type)
-    }
+	if response.ClientData.Type != webAuthnGet {
+		return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", response.ClientData.Type)
+	}
 
-    if !strings.Contains(response.ClientData.Origin, "localhost") {
-        return fmt.Errorf("Origin is not allowed; got '%s'", response.ClientData.Origin)
-    }
+	if !strings.Contains(response.ClientData.Origin, "localhost") {
+		return fmt.Errorf("Origin is not allowed; got '%s'", response.ClientData.Origin)
+	}
 
-    return nil
+	return nil
 }
 
 func (webauthn *WebAuthn) verifySignatureForLogin(response *AssertionResponse, publicKey PublicKey) error {
-    ok, err := publicKey.Verify(response.VerificationData, response.Signature)
-    if err != nil {
-        return err
-    }
-    if !ok {
-        return fmt.Errorf("Something went wrong")
-    }
-    return nil
+	ok, err := publicKey.Verify(response.VerificationData, response.Signature)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("Something went wrong")
+	}
+	return nil
 }

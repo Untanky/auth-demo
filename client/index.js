@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8080';
+const API_URL = 'http://localhost:8080/authenticate/';
 const NEXT_STEP_HEADER = 'Next-Step';
 
 function bufferEncode(value) {
@@ -11,7 +11,7 @@ function bufferEncode(value) {
 async function signUp() {
   const identifier = document.getElementById('identifier').value;
   const rawResponse = await fetch(
-    `${API_URL}/authenticate`,
+    `${API_URL}`,
     {
       method: 'POST',
       headers: {
@@ -40,7 +40,7 @@ async function signUp() {
     if (credential.response instanceof AuthenticatorAttestationResponse) {
       const body = { id: credential.id, type: credential.type, rawId: bufferEncode(credential.rawId), response: { attestationObject: bufferEncode(credential.response.attestationObject), clientDataJSON: bufferEncode(credential.response.clientDataJSON) } };
 
-      await fetch(`${API_URL}/${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      await fetch(`${API_URL}${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     } else {
       throw new Error('Error');
     }
@@ -57,7 +57,6 @@ async function signUp() {
       }
     });
 
-    console.log(assertion);
     if (assertion.response instanceof AuthenticatorAssertionResponse) {
       const body = { 
         id: assertion.id,
@@ -71,7 +70,7 @@ async function signUp() {
         }
       };
 
-      await fetch(`${API_URL}/${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      await fetch(`${API_URL}${nextStep}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     } else {
       throw new Error('Error');
     }
