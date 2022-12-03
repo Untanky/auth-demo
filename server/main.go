@@ -13,10 +13,10 @@ const (
 )
 
 type RegisterRequest struct {
-	Id       string             `json:"id"`
-	Type     string             `json:"type"`
-	RawId    URLEncodedBase64   `json:"rawId"`
-	Response CredentialResponse `json:"response"`
+	Id       string              `json:"id"`
+	Type     string              `json:"type"`
+	RawId    URLEncodedBase64    `json:"rawId"`
+	Response AttestationResponse `json:"response"`
 }
 
 type LoginRequest struct {
@@ -94,5 +94,5 @@ func main() {
 	authenticationController.Init(userRepo, challengeRepo, webauthn)
 	authenticationController.Routes(router.Group("authenticate"))
 
-    router.Run()
+	router.Run()
 }

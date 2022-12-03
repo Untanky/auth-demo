@@ -97,7 +97,7 @@ func (webauthn *WebAuthn) FinishRegister(registerRequest RegisterRequest) (*User
 	}, nil
 }
 
-func (webauthn *WebAuthn) verifyCreateCredentials(challenge *RegisterResponse, attestationResponse CredentialResponse) error {
+func (webauthn *WebAuthn) verifyCreateCredentials(challenge *RegisterResponse, attestationResponse AttestationResponse) error {
 	if challenge == nil {
 		return fmt.Errorf("No valid challenge found")
 	}
@@ -138,7 +138,7 @@ func (webauthn *WebAuthn) verifyClientData(clientData ClientData) error {
 	return nil
 }
 
-func (webauthn *WebAuthn) verifyKeyAlgorithm(attestationResponse CredentialResponse) error {
+func (webauthn *WebAuthn) verifyKeyAlgorithm(attestationResponse AttestationResponse) error {
 	if attestationResponse.PublicKey.GetAlgorithm() != attestationResponse.AttestationObject.AttStmt.Algorithm {
 		return fmt.Errorf("Algorithms do not match %d != %d", attestationResponse.PublicKey.GetAlgorithm(), attestationResponse.AttestationObject.AttStmt.Algorithm)
 	}
@@ -146,7 +146,7 @@ func (webauthn *WebAuthn) verifyKeyAlgorithm(attestationResponse CredentialRespo
 	return nil
 }
 
-func (webauthn *WebAuthn) verifySignature(attestationResponse CredentialResponse) error {
+func (webauthn *WebAuthn) verifySignature(attestationResponse AttestationResponse) error {
 	ok, err := attestationResponse.PublicKey.Verify(attestationResponse.VerificationData, attestationResponse.AttestationObject.AttStmt.Signature)
 	if err != nil {
 		return err

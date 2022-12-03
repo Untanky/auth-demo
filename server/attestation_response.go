@@ -7,21 +7,21 @@ import (
 	"github.com/fxamacker/cbor"
 )
 
-// CredentialResponse is the response to a register or login request done on the client.
-type CredentialResponse struct {
+// AttestationResponse is the response to a register or login request done on the client.
+type AttestationResponse struct {
 	AttestationObject AttestationObject
 	ClientData        ClientData
 	VerificationData  []byte
 	PublicKey         PublicKey
 }
 
-type rawCredentialResponse struct {
+type rawAttestationResponse struct {
 	AttestationObject URLEncodedBase64 `json:"attestationObject"`
 	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
 }
 
-func (response *CredentialResponse) UnmarshalJSON(b []byte) error {
-	var rawResponse rawCredentialResponse
+func (response *AttestationResponse) UnmarshalJSON(b []byte) error {
+	var rawResponse rawAttestationResponse
 	err := json.Unmarshal(b, &rawResponse)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (response *CredentialResponse) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (response *CredentialResponse) unmarshalClientData(rawResponse rawCredentialResponse) error {
+func (response *AttestationResponse) unmarshalClientData(rawResponse rawAttestationResponse) error {
 	var clientData ClientData
 	err := json.Unmarshal(rawResponse.ClientDataJSON, &clientData)
 	if err != nil {
@@ -58,7 +58,7 @@ func (response *CredentialResponse) unmarshalClientData(rawResponse rawCredentia
 	return nil
 }
 
-func (response *CredentialResponse) unmarshalAttestationObject(rawResponse rawCredentialResponse) error {
+func (response *AttestationResponse) unmarshalAttestationObject(rawResponse rawAttestationResponse) error {
 	var attestationObject AttestationObject
 	if err := cbor.Unmarshal(rawResponse.AttestationObject, &attestationObject); err != nil {
 		return err
