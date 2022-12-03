@@ -65,7 +65,7 @@ func main() {
 	relyingParty := &RelyingParty{Id: "localhost", Name: "IAM Auth"}
 	publicKeyCredentialsParams := []*PublicKeyCredentialParameter{{Algorithm: -7, Type: "public-key"}}
 
-	webauthn := CreateWebAuthn(relyingParty, "platform", publicKeyCredentialsParams)
+	webauthn := CreateWebAuthn(relyingParty, "platform", publicKeyCredentialsParams, challengeRepo)
 
 	router := gin.Default()
 
@@ -86,7 +86,18 @@ func main() {
 		}
 
 		user, _ := userRepo.FindByIdentifier(body.Identifier)
-		response := webauthn.Authenticate(user)
+
+		var response interface{}
+		if user != nil {
+			response = webauthn.BeginLogin(user)
+			c.Header("Next-Step", "login")
+		} else {
+			response = webauthn.BeginRegister(&User{
+				Credentials: []Credential{},
+				Identifier:  body.Identifier,
+                })
+            c.Header("Next-Step", "register")
+		}
 		c.JSON(http.StatusOK, response)
 	})
 
@@ -101,31 +112,23 @@ func main() {
 			return
 		}
 
-		challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-		challenge, _ := challengeRepo.FindByValue(string(challengeId))
-
-		// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-		r := (challenge.Response.(RegisterResponse))
-		err = body.Response.VerifyCreateCredentials(&r)
+		user, err := webauthn.FinishRegister(body)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+				"message": "could not validate registration",
 			})
+			fmt.Println(err)
+			return
 		}
 
-		userRepo.Create(&User{
-			Identifier: r.User.Name,
-			Credentials: []Credential{
-				{
-					Id:         body.Response.AttestationObject.AuthnData.AttData.CredentialID,
-					PublicKey:  body.Response.PublicKey,
-					Type:       "public-key",
-					Transports: []string{"platform"},
-				},
-			},
-		})
-
-		challengeRepo.DeleteByValue(string(challengeId))
+		err = userRepo.Create(user)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "could not store user data",
+			})
+			fmt.Println(err)
+			return
+		}
 
 		c.JSON(http.StatusOK, nil)
 	})

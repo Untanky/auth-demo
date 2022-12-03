@@ -47,6 +47,5 @@ func (repo *InMemoryUserRepository) FindByIdentifier(identifier string) (*User, 
 
 func (repo *InMemoryUserRepository) Create(user *User) error {
 	repo.knownUsers = append(repo.knownUsers, user)
-	fmt.Println(*user)
 	return nil
 }

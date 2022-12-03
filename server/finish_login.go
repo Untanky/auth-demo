@@ -45,7 +45,6 @@ func (response *AssertionResponse) verifyClientData() error {
 }
 
 func (response *AssertionResponse) verifySignature(publicKey PublicKey) error {
-	fmt.Println("publicKey", publicKey)
 	ok, err := publicKey.Verify(response.VerificationData, response.Signature)
 	if err != nil {
 		return err

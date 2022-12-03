@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 )
 
 // AssertionResponse is the response to a register or login request done on the client.
@@ -26,7 +25,6 @@ func (response *AssertionResponse) UnmarshalJSON(b []byte) error {
 	var rawResponse rawAssertionResponse
 	err := json.Unmarshal(b, &rawResponse)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -49,7 +47,6 @@ func (response *AssertionResponse) UnmarshalJSON(b []byte) error {
 	hash.Write(rawResponse.ClientDataJSON)
 	response.VerificationData = append(rawResponse.AuthenticatorData, hash.Sum(nil)...)
 
-	fmt.Println(rawResponse.UserHandle)
 	response.UserHandle = string(rawResponse.UserHandle)
 	response.Signature = rawResponse.Signature
 	return nil
