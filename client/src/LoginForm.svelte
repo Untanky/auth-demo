@@ -1,10 +1,16 @@
 <script lang="ts">
+  let accountId: string;
+
+  const signIn = (e: Event) => {
+    e.preventDefault();
+    console.log(accountId);
+  }
 </script>
 
 <template>
-  <form class="flex flex-col space-y-2 pt-4">
-    <label for="accountId" class="font-thin uppercase">Account ID:</label>
-    <input id="accountId" type="text" class="px-4 py-2 rounded border border-gray-700" />
-    <button type="submit" class="px-4 py-2 bg-orange-500 rounded border border-orange-700">Sign in</button>
+  <form class="flex flex-col pt-4">
+    <label for="accountId" class="">Account ID:</label>
+    <input id="accountId" type="text" bind:value="{accountId}" />
+    <button type="submit" class="mt-4 bg-orange-500 border-orange-700" on:click={signIn}>Sign in</button>
   </form>
 </template>
