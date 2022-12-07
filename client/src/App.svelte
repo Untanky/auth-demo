@@ -5,17 +5,17 @@
   import Tailwind from "./Tailwind.svelte";
 </script>
 
-<main class="flex flex-row space-x-8 justify-center mt-16">
-  <div>
-    <Navigation />
-    <section class="card w-[600px]">
+<div class="max-w-[900px] m-4 md:mx-auto md:mt-16">
+  <Navigation />
+  <main class="flex flex-col md:flex-row gap-8 mt-8">
+    <div class="order-2 md:order-1 w-[550px]">
       <Documentation />
+    </div>
+    <section class="order-1 md:order-2 card md:max-w-[350px]">
+      <h1 class="text-xl">Sign in</h1>
+      <p class="pt-2 text-zinc-700">To authenticate You, please enter Your account identifier.</p>
+      <LoginForm />
     </section>
-  </div>
-  <section class="card w-[300px]">
-    <h1 class="text-3xl">Sign in</h1>
-    <p class="pt-4">To authenticate You, please enter Your account identifier.</p>
-    <LoginForm />
-  </section>
-</main>
+  </main>
+</div>
 <Tailwind />

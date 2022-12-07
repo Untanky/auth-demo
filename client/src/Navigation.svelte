@@ -5,18 +5,17 @@
 </script>
 
 <template>
-  <nav class="mb-4 space-y-4">
-    <ul>
+  <nav class="mb-4 flex flex-col md:flex-row gap-2">
+    <button class="button self-start" on:keydown={goBack} on:click={goBack}>Back</button>
+    <ul class="flex flex-row text-zinc-700 rounded-xl border border-zinc-600 overflow-x-scroll">
       <li>
-        <button class="button-sm" on:keydown={goBack} on:click={goBack}>Back</button>
-      </li>
-    </ul>
-    <ul class="flex flex-row space-x-4">
-      <li>
-        <a class="link-button-md">Description</a>
+        <a class="block px-6 py-2.5 cursor-pointer text-black">Description</a>
       </li>
       <li>
-        <a class="link-button-md" href="https://github.com/Untanky/webauthn">GitHub</a>
+        <a class="block px-6 py-2.5 cursor-pointer">Implementation</a>
+      </li>
+      <li>
+        <a class="block px-6 py-2.5 cursor-pointer" href="https://github.com/Untanky/webauthn">GitHub</a>
       </li>
     </ul>
   </nav>

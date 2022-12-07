@@ -6,23 +6,27 @@
 
 @layer components {
   .card {
-    @apply p-4 rounded-lg border border-gray-700 
+    @apply p-6 rounded-xl border border-zinc-600 
   }
 
   label {
-    @apply font-thin uppercase;
+    @apply text-zinc-400;
   }
 
   button, .button-sm, .button-md, .link-button-sm, .link-button-md, input, .input-sm .input-md, textarea, select {
-    @apply rounded border border-gray-700
+    @apply border border-zinc-600
   }
 
   button, input, textarea, select .button-md, .link-button-md, .input-md {
-    @apply px-4 py-2
+    @apply px-6 py-2.5 rounded-xl 
+  }
+
+  input {
+    @apply placeholder:text-zinc-600
   }
 
   .button-sm, .link-button-sm, .input-sm {
-    @apply px-4 py-1
+    @apply px-3 py-px rounded-lg
   }
 
   .link-button-sm, .link-button-md {

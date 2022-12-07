@@ -10,7 +10,7 @@
 <template>
   <form class="flex flex-col pt-4">
     <label for="accountId" class="">Account ID:</label>
-    <input id="accountId" type="text" bind:value="{accountId}" />
-    <button type="submit" class="mt-4 bg-orange-500 border-orange-700" on:click={signIn}>Sign in</button>
+    <input id="accountId" type="text" class="mt-1" placeholder="abc@example.com" bind:value="{accountId}" />
+    <button type="submit" class="self-end mt-4 bg-zinc-300 border-zinc-600" on:click={signIn}>Sign in</button>
   </form>
 </template>
