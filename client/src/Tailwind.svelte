@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  * {
+    @apply dark:text-zinc-50 dark:bg-zinc-900
+  }
+}
+
 @layer components {
   .card {
     @apply p-6 rounded-xl border border-zinc-600 dark:border-zinc-400;
@@ -31,10 +37,6 @@
 
   .link-button-sm, .link-button-md {
     @apply hover:cursor-pointer;
-  }
-
-  body {
-    @apply dark:bg-zinc-900 dark:text-white
   }
 }
 
