@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { authenticate } from './webauthn';
+  import { createEventDispatcher } from 'svelte';
+	const dispatch = createEventDispatcher();
 
   let accountId: string;
 
+
   const signIn = (e: Event) => {
     e.preventDefault();
-    authenticate(accountId);
+    dispatch('authenticate', accountId);
   }
 </script>
 

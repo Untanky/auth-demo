@@ -8,7 +8,11 @@ const bufferEncode = (value: Uint8Array): string => {
     .replace(/=/g, "");;
 }
 
-export const authenticate = async (identifier: string): Promise<void> => {
+interface AuthenticationResponse {
+  accessKey: string;
+}
+
+export const authenticate = async (identifier: string): Promise<AuthenticationResponse> => {
   const body = JSON.stringify({ identifier });
   const response = await fetch(
     AUTHENTICATE_URL, 
@@ -30,6 +34,10 @@ export const authenticate = async (identifier: string): Promise<void> => {
   } else {
     login(credentialsParams);
   }
+
+  return {
+    accessKey: ''
+  };
 }
 
 const register = async (createOptions: PublicKeyCredentialCreationOptions): Promise<void> => {
