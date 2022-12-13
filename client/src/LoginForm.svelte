@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { authenticate } from './webauthn';
+
   let accountId: string;
 
   const signIn = (e: Event) => {
     e.preventDefault();
-    console.log(accountId);
+    authenticate(accountId);
   }
 </script>
 
