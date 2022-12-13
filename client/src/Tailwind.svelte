@@ -5,21 +5,21 @@
 @tailwind utilities;
 
 @layer base {
-  * {
+  body {
     @apply dark:text-zinc-50 dark:bg-zinc-900
   }
 }
 
 @layer components {
   .card {
-    @apply p-6 rounded-xl border border-zinc-600 dark:border-zinc-400;
+    @apply p-6 rounded-xl border-2 border-zinc-400 dark:border-zinc-600;
   }
 
   label {
-    @apply text-zinc-400 dark:border-zinc-600;
+    @apply text-zinc-500 dark:border-zinc-600;
   }
 
-  button, .button-sm, .button-md, .link-button-sm, .link-button-md, input, .input-sm .input-md, textarea, select {
+  button, .button-sm, .button-md, .link-button-sm, .link-button-md {
     @apply border border-zinc-600 dark:border-zinc-400 bg-transparent;
   }
 
@@ -28,7 +28,7 @@
   }
 
   input {
-    @apply placeholder:text-zinc-600 placeholder:dark:text-zinc-400;
+    @apply placeholder:text-zinc-600 placeholder:dark:text-zinc-400 shadow-inner dark:shadow-none dark:border-zinc-400 dark:border dark:bg-zinc-900;
   }
 
   .button-sm, .link-button-sm, .input-sm {
