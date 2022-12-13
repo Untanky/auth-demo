@@ -13,7 +13,7 @@
     </section>
     <section class="order-1 md:order-2 card md:max-w-[350px]">
       <h1 class="text-xl">Sign in</h1>
-      <p class="pt-2 text-zinc-700">To authenticate You, please enter Your account identifier.</p>
+      <p class="pt-2 text-zinc-700 dark:text-zinc-300">To authenticate You, please enter Your account identifier.</p>
       <LoginForm />
     </section>
   </main>
