@@ -4,5 +4,7 @@ import { html } from '../../README.md';
 </script>
 
 <template>
-  <SvelteMarkdown source={html} />
+  <article class="prose prose-zinc dark:prose-invert prose-sm md:prose-base">
+    <SvelteMarkdown source={html} />
+  </article>
 </template>
