@@ -8,6 +8,30 @@
   body {
     @apply dark/:text-zinc-50 dark/:bg-zinc-900
   }
+
+  h1, h2, h3, h4, p {
+    @apply mb-2;
+  }
+
+  h1 {
+    @apply text-2xl font-bold lg:text-3xl;
+  }
+
+  h2 {
+    @apply text-lg font-bold lg:text-2xl;
+  }
+
+  h3 {
+    @apply text-base font-bold lg:text-xl;
+  }
+
+  h4 {
+    @apply text-base font-semibold lg:text-lg;
+  }
+
+  p {
+    @apply text-zinc-300;
+  }
 }
 
 @layer components {

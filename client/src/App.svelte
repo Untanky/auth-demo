@@ -13,7 +13,7 @@
     <section class="md:col-start-1 md:col-end-1 md:row-start-2">
       <Documentation />
     </section>
-    <section class="card md:col-start-2 md:col-end-2 md:row-start-2">
+    <section class="card md:col-start-2 md:col-end-2 md:row-start-2 self-start">
       <h1 class="text-lg font-semibold">Sign in</h1>
       <p class="pt-2 text-zinc-700 dark:text-zinc-300">To authenticate You, please enter Your account identifier.</p>
       <LoginForm />
