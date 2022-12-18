@@ -5,7 +5,7 @@
 </script>
 
 <template>
-  <nav class="mb-4 flex flex-col items-start space-y-4">
+  <nav class="flex flex-col items-start space-y-4">
     <button class="border-0 p-0">
       Back
     </button>
