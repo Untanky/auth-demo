@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
-	"net/http"
 )
 
 type AuthenticationController struct {
@@ -121,7 +122,7 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 }
 
 func (controller *AuthenticationController) Routes(rg *gin.RouterGroup) {
-	rg.POST("/", controller.Authenticate)
+	rg.POST("", controller.Authenticate)
 	rg.POST("/register", controller.Register)
 	rg.POST("/login", controller.Login)
 }

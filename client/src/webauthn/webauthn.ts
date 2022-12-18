@@ -1,4 +1,4 @@
-const BASE_URL = '';
+const BASE_URL = import.meta.env.VITE_URL || 'http://localhost:8080';
 const AUTHENTICATE_URL = `${BASE_URL}/authenticate`;
 
 const bufferEncode = (value: Uint8Array): string => {
@@ -30,9 +30,9 @@ export const authenticate = async (identifier: string): Promise<AuthenticationRe
   const registering = nextStep === 'register';
 
   if (registering) {
-    register(credentialsParams);
+    await register(credentialsParams);
   } else {
-    login(credentialsParams);
+    await login(credentialsParams);
   }
 
   return {
@@ -42,7 +42,16 @@ export const authenticate = async (identifier: string): Promise<AuthenticationRe
 
 const register = async (createOptions: PublicKeyCredentialCreationOptions): Promise<void> => {
   const credential = await navigator.credentials.create({
-    publicKey: createOptions
+    publicKey: {
+      ...createOptions,
+      // @ts-ignore
+      challenge: Uint8Array.from(createOptions.challenge, c => c.charCodeAt(0)),
+      user: {
+        ...createOptions.user,
+        // @ts-ignore
+        id: Uint8Array.from(createOptions.user.id, c => c.charCodeAt(0)),
+      }
+    }
   });
 
   // @ts-ignore
@@ -58,7 +67,17 @@ const register = async (createOptions: PublicKeyCredentialCreationOptions): Prom
 
 const login = async (requestOptions: PublicKeyCredentialRequestOptions): Promise<void> => {
   const assertion = await navigator.credentials.get({
-    publicKey: requestOptions
+    publicKey: {
+        ...requestOptions,
+        // @ts-ignore
+        challenge: Uint8Array.from(requestOptions.challenge, c => c.charCodeAt(0)),
+        allowCredentials: requestOptions.allowCredentials.map((credentials) => ({
+          ...credentials,
+          // @ts-ignore
+          id: Uint8Array.from(atob(credentials.id), c => c.charCodeAt(0)),
+          transports: []
+        }))
+      }
   });
 
         // @ts-ignore

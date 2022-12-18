@@ -68,12 +68,12 @@ func main() {
 	relyingParty := &RelyingParty{Id: "localhost", Name: "IAM Auth"}
 	publicKeyCredentialsParams := []*PublicKeyCredentialParameter{{Algorithm: -7, Type: "public-key"}}
 
-	webauthn := CreateWebAuthn(relyingParty, "platform", publicKeyCredentialsParams, challengeRepo)
+	webauthn := CreateWebAuthn(relyingParty, "both", publicKeyCredentialsParams, challengeRepo)
 
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5500"}
+	config.AllowOrigins = []string{"http://localhost:5173"}
 	config.ExposeHeaders = []string{"Next-Step"}
 
 	router.Use(cors.New(config))

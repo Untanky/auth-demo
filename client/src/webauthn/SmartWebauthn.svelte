@@ -13,7 +13,8 @@
       const { accessKey } = await authenticate(event.detail);
       localStorage.setItem(StorageKeys.AccessKey, accessKey);
       loggedIn = true;
-    } catch {
+    } catch (e) {
+      console.error(e);
       localStorage.removeItem(StorageKeys.AccessKey)
     }
   }
