@@ -1,8 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"log"
+	"os"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -62,7 +67,30 @@ type LoginResponse struct {
 }
 
 func main() {
-	userRepo := &InMemoryUserRepository{knownUsers: []*User{}}
+	os.Remove("./foo.db")
+
+	db, err := sql.Open("sqlite3", "./foo.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	sqlStmt := `
+	CREATE TABLE crendential (
+		id VARCHAR NOT NULL PRIMARY KEY,
+		public_key BLOB NOT NULL,
+		type VARCHAR,
+		transports VARCHAR,
+		user_id VARCHAR NOT NULL
+	)
+	`
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		log.Printf("%q: %s\n", err, sqlStmt)
+		return
+	}
+
+	userRepo := &SqliteUserRepository{db: db}
 	challengeRepo := &InMemoryChallengeRepository{challenges: map[string]interface{}{}}
 
 	relyingParty := &RelyingParty{Id: "localhost", Name: "IAM Auth"}
