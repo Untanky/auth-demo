@@ -2,7 +2,7 @@
 import SvelteMarkdown from 'svelte-markdown';
 import { html as description } from '../../DESCRIPTION.md';
 import { html as documentation } from '../../README.md';
-import Router from '../navigation/Router.svelte';
+import Router from '../router/Router.svelte';
 </script>
 
 <template>

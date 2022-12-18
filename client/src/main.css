@@ -37,4 +37,16 @@
   .link-button-sm, .link-button-md {
     @apply hover/:cursor-pointer;
   }
+  
+  .router-link {
+    @apply text-xl font-medium;
+  }
+
+  .router-link:not(.active) {
+    @apply cursor-pointer;
+  }
+
+  .router-link.active {
+    @apply border-amber-600 border-b-[3px];
+  }
 }
