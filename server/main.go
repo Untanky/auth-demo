@@ -76,7 +76,7 @@ func main() {
 	defer db.Close()
 
 	sqlStmt := `
-	CREATE TABLE crendential (
+	CREATE TABLE credential (
 		id VARCHAR NOT NULL PRIMARY KEY,
 		public_key BLOB NOT NULL,
 		type VARCHAR,
