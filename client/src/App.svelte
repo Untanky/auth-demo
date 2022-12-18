@@ -12,7 +12,7 @@
     <section class="row-start-3 md:col-start-1 md:col-end-1 md:row-start-2">
       <Documentation />
     </section>
-    <section class="card row-start-1 md:col-start-2 md:col-end-2 md:row-start-2 self-start">
+    <section class="card row-start-1 md:col-start-2 md:col-end-2 md:row-start-2 self-start sticky top-24">
       <SmartWebauthn />
     </section>
   </main>

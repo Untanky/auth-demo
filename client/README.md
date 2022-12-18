@@ -1,47 +1,32 @@
-# Svelte + TS + Vite
+# WebAuthn Demo
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+WebAuthn is a specification for password-less authentication on the web. The specification describes an API between a web page and the browser. This API is used to access system or browser specific authentication methods. Furthermore a workflow is described to handle the data provided by the system authenticators.
 
-## Recommended IDE Setup
+There are a couple of key term used by the specification:
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- Authenticator: party that handles verification that the user is who they claim to be
+- Relying Party: resource provider that requires authentication for access
+- Subject: user during authentication
 
-## Need an official Svelte framework?
+The general idea behind WebAuthn is to stop using password when signing up for and signing into services, as weak or stolen password can pose a security risk. A solution to this problem is public key authentication.
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+In public key authentication, the client generates a key pair, consisting of a private and public key. The public key can be stored at the relying party. The private key can then be used to sign a challenge provided by the relying party. The relying party then can use the public key to verify that the challenge was signed by the correct client.
 
-## Technical considerations
+In traditional password based authentication, the server is the key authenticator, being a focal point of attacks. With WebAuthn the authenticator role is moved to the client, and more specifically the browser or underlying system the client is implemented on. The authenticator has become decentralised.
 
-**Why use this over SvelteKit?**
+## Flow of WebAuthn
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+## Phishing
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+WebAuthn also eliminates the risk of phishing entirely. The authenticator must not sign the challenge if the origin does not match the requested key. Therefore phishing becomes difficult
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+## Disadvantages of WebAuthn
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+While WebAuthn provides great security benefits, especially in a corporate environment, it is somewhat limited by design. Cross-device authentication is a possibility, but can be cumbersome to set up and many users prefer a more stream-lined and “standardised” authentication model. 
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+Secondly, the authenticators are all implemented either by browser vendors, operating systems or hardware manufacturers. These keys, again by design, cannot be interchanged between these parties. This makes switching from that vendor or manufacturer a difficulty, especially when WebAuthn has been used exclusively.
 
-**Why include `.vscode/extensions.json`?**
+## Implementation Details
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+- Backend with Go
+- Web Frontend with Svelte
