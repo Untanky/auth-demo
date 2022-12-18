@@ -1,0 +1,21 @@
+{
+  "relyingParty": {
+    "id": "localhost",
+    "name": "WebAuthn Demo - Lukas Grimm"
+  },
+  "publicKeyCredentialParams": [
+    {
+      "alg": -7,
+      "type": "public-key"
+    }
+  ],
+  "challenge": {
+    "length": "40"
+  },
+  "authenticator": "both",
+  "cors": {
+    "origins": ["http://localhost:5173"],
+    "headers": ["Next-Step"]
+  },
+  "port": 8080
+}
