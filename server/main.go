@@ -1,10 +1,6 @@
 package main
 
 import (
-	"database/sql"
-	"log"
-	"os"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -67,28 +63,11 @@ type LoginResponse struct {
 }
 
 func main() {
-	os.Remove("./foo.db")
-
-	db, err := sql.Open("sqlite3", "./foo.db")
+	db, err := ConnectDB()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer db.Close()
-
-	sqlStmt := `
-	CREATE TABLE credential (
-		id VARCHAR NOT NULL PRIMARY KEY,
-		public_key BLOB NOT NULL,
-		type VARCHAR,
-		transports VARCHAR,
-		user_id VARCHAR NOT NULL
-	)
-	`
-	_, err = db.Exec(sqlStmt)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
-		return
-	}
 
 	userRepo := &SqliteUserRepository{db: db}
 	challengeRepo := &InMemoryChallengeRepository{challenges: map[string]interface{}{}}
