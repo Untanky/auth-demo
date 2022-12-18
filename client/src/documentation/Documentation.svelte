@@ -1,6 +1,6 @@
 <script lang="ts">
 import SvelteMarkdown from 'svelte-markdown';
-import { html } from '../README.md';
+import { html } from '../../README.md';
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import LoginForm from './LoginForm.svelte';
-import { authenticate } from './webauthn';
+  import { authenticate } from './webauthn';
 
   let loggedIn = false;
 
@@ -20,8 +20,12 @@ import { authenticate } from './webauthn';
 </script>
 
 <template>
-{#if loggedIn}
-  <LoginForm on:authenticate={onAuthenticate}></LoginForm>
+{#if loggedIn === false}
+  <div>
+    <h1 class="text-lg font-semibold">Sign in</h1>
+    <p class="pt-2 text-zinc-700 dark:text-zinc-300">To authenticate You, please enter Your account identifier.</p>
+    <LoginForm></LoginForm>
+  </div>
 {:else}
   <p>Successfully logged in</p>
 {/if}
