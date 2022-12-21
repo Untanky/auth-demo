@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -23,5 +24,6 @@ func ReadConfig() (*Config, error) {
 
 	config := &Config{}
 	json.Unmarshal(configBytes, config)
+	fmt.Println(config)
 	return config, nil
 }
