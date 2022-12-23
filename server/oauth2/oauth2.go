@@ -22,7 +22,7 @@ const (
 // - authorization code
 // - implicit
 type AuthorizationRequest struct {
-	// REQUIRED. Value MUST be set to "code".
+	// REQUIRED. Value MUST be a valid response type.
 	ResponseType responseType `form:"response_Type"`
 	// REQUIRED. The client identifier.
 	ClientID clientID `form:"client_id"`
