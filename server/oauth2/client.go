@@ -40,10 +40,6 @@ const (
 
 type clientID string
 
-// TODO: move to different file
-type responseTypes string
-type grantTypes string
-
 // Response when a new client registers.
 //
 // Defined https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata
@@ -57,10 +53,10 @@ type ClientMetadata struct {
 	// OPTIONAL. JSON array containing a list of the OAuth 2.0 response_type
 	// values that the Client is declaring that it will restrict itself to using.
 	// If omitted, the default is that the Client will use only the `code` Response Type.
-	ResponseTypes []responseTypes `json:"response_types;omitempty"`
+	ResponseTypes []responseType `json:"response_types;omitempty"`
 	// OPTIONAL. JSON array containing a list of the OAuth 2.0 Grant Types that the.
 	// Client is declaring that it will restrict itself to using.
-	GrantTypes []grantTypes `json:"grant_types;omitempty"`
+	GrantTypes []grantType `json:"grant_types;omitempty"`
 }
 
 // Response when a new client registers.
