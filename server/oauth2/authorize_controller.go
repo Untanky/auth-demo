@@ -29,13 +29,13 @@ type AuthorizationController struct {
 func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
 	var request AuthorizationRequest
 	if err := c.BindQuery(&request); err != nil {
-		controller.failAuthorization(&request, invalid_request, c)
+		controller.failAuthorization(&request, InvalidRequest, c)
 		return
 	}
 
 	challenge, err := controller.authorizationState.Set(&request)
 	if err != nil {
-		controller.failAuthorization(&request, server_error, c)
+		controller.failAuthorization(&request, ServerError, c)
 		fmt.Println(err)
 		return
 	}
@@ -46,30 +46,30 @@ func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
 func (controller *AuthorizationController) FinishAuthorization(request *AuthorizationRequest, c *gin.Context) {
 	client, err := controller.clientRepo.FindClient(request.ClientID)
 	if err != nil {
-		controller.failAuthorization(request, unauthorized_client, c)
-		return
-	}
-
-	if !slices.Contains(client.ResponseTypes, request.ResponseType) {
-		controller.failAuthorization(request, invalid_request, c)
+		controller.failAuthorization(request, UnauthorizedClient, c)
 		return
 	}
 
 	if request.RedirectURI == "" {
 		request.RedirectURI = client.RedirectionURIs[0]
 	} else if !slices.ContainsFunc(client.RedirectionURIs, func(uri string) bool { return uri == request.RedirectURI }) {
-		controller.failAuthorization(request, invalid_request, c)
+		controller.failAuthorization(request, InvalidRequest, c)
 		return
 	}
 
-	redirectionUrl, err := url.Parse(request.RedirectURI)
+	redirectionURI, err := url.Parse(request.RedirectURI)
 	if err != nil {
-		controller.failAuthorization(request, invalid_request, c)
+		controller.failAuthorization(request, InvalidRequest, c)
 		return
 	}
 
-	if !redirectionUrl.Query().Has("state") {
-		redirectionUrl.Query().Add("state", request.State)
+	if !redirectionURI.Query().Has("state") {
+		redirectionURI.Query().Add("state", request.State)
+	}
+
+	if !slices.Contains(client.ResponseTypes, request.ResponseType) {
+		controller.RedirectFailedAuthorization(redirectionURI, InvalidRequest, c)
+		return
 	}
 
 	switch request.ResponseType {
@@ -79,7 +79,7 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 			State: request.State,
 		}
 
-		redirectionUrl.Query().Add("code", response.Code)
+		redirectionURI.Query().Add("code", response.Code)
 		break
 	case ResponseTypeToken:
 		response := &TokenResponse{
@@ -90,23 +90,34 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 			State:       request.State,
 		}
 
-		redirectionUrl.Query().Add("access_token", response.AccessToken)
-		redirectionUrl.Query().Add("scope", strings.Join(request.Scope, ""))
-		redirectionUrl.Query().Add("expires_in", fmt.Sprint(response.ExpiresIn))
-		redirectionUrl.Query().Add("token_type", response.TokenType)
+		redirectionURI.Query().Add("access_token", response.AccessToken)
+		redirectionURI.Query().Add("scope", strings.Join(request.Scope, ""))
+		redirectionURI.Query().Add("expires_in", fmt.Sprint(response.ExpiresIn))
+		redirectionURI.Query().Add("token_type", response.TokenType)
 		break
 	default:
-		controller.failAuthorization(request, unsupported_response_type, c)
+		controller.RedirectFailedAuthorization(redirectionURI, UnsupportedResponseType, c)
 		return
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprint(redirectionUrl))
+	c.Redirect(http.StatusFound, fmt.Sprint(redirectionURI))
 }
 
-func (controller *AuthorizationController) failAuthorization(request *AuthorizationRequest, err oauth2Error, c *gin.Context) {
+func (controller *AuthorizationController) failAuthorization(request *AuthorizationRequest, err OAuth2Error, c *gin.Context) {
+	response := ErrorResponse{
+		OAuth2Error: err,
+		State:       request.State,
+	}
 
+	c.JSON(response.StatusCode, response)
 }
 
-func (controller *AuthorizationController) RedirectFailAuthorization(request *AuthorizationRequest, err oauth2Error, c *gin.Context) {
+func (controller *AuthorizationController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
+	redirectionURI.Query().Add("error", err.ErrorType)
+	redirectionURI.Query().Add("error_description", err.ErrorDescription)
+	if err.ErrorURI != "" {
+		redirectionURI.Query().Add("error_uri", err.ErrorURI)
+	}
 
+	c.Redirect(http.StatusFound, fmt.Sprint(redirectionURI))
 }
