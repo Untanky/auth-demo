@@ -1,8 +1,10 @@
-package main
+package webauthn
 
 import (
 	"crypto/sha256"
 	"encoding/json"
+
+	. "github.com/Untanky/iam-auth/utils"
 )
 
 // AssertionResponse is the response to a register or login request done on the client.

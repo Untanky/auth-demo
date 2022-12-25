@@ -1,4 +1,4 @@
-package main
+package webauthn
 
 import (
 	"database/sql"
@@ -9,11 +9,11 @@ import (
 )
 
 type SqliteUserRepository struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func (repo *SqliteUserRepository) FindByIdentifier(identifier string) (*User, error) {
-	rows, err := repo.db.Query("SELECT id, public_key, type, transports FROM credential WHERE user_id = ?", identifier)
+	rows, err := repo.DB.Query("SELECT id, public_key, type, transports FROM credential WHERE user_id = ?", identifier)
 	if err != nil {
 		fmt.Println(err)
 		return nil, fmt.Errorf("No user with identifier '%s' found", identifier)
@@ -49,7 +49,7 @@ func (repo *SqliteUserRepository) Create(user *User) error {
 	publicKey, err := cbor.Marshal(user.Credentials[0].PublicKey, cbor.CTAP2EncOptions())
 	transports := strings.Join(user.Credentials[0].Transports, ",")
 
-	_, err = repo.db.Exec(
+	_, err = repo.DB.Exec(
 		"INSERT INTO credential (id, public_key, type, transports, user_id) VALUES (?, ?, ?, ?, ?)",
 		user.Credentials[0].Id,
 		publicKey,

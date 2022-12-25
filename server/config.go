@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/Untanky/iam-auth/webauthn"
 )
 
 type CorsConfig struct {
@@ -12,11 +14,11 @@ type CorsConfig struct {
 }
 
 type Config struct {
-	RelyingParty              RelyingParty                    `json:"relyingParty"`
-	PublicKeyCredentialParams []*PublicKeyCredentialParameter `json:"publicKeyCredentialParams"`
-	Authenticator             string                          `json:"authenticator"`
-	Cors                      CorsConfig                      `json:"cors"`
-	Port                      int                             `json:"port"`
+	RelyingParty              webauthn.RelyingParty                    `json:"relyingParty"`
+	PublicKeyCredentialParams []*webauthn.PublicKeyCredentialParameter `json:"publicKeyCredentialParams"`
+	Authenticator             string                                   `json:"authenticator"`
+	Cors                      CorsConfig                               `json:"cors"`
+	Port                      int                                      `json:"port"`
 }
 
 func ReadConfig() (*Config, error) {

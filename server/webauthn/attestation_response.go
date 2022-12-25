@@ -1,9 +1,10 @@
-package main
+package webauthn
 
 import (
 	"crypto/sha256"
 	"encoding/json"
 
+	. "github.com/Untanky/iam-auth/utils"
 	"github.com/fxamacker/cbor"
 )
 

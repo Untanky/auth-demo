@@ -1,23 +1,23 @@
-package main
+package webauthn
 
 import (
 	"errors"
-    "fmt"
-    "math/rand"
+	"fmt"
+	"math/rand"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func randStringBytes(n int) string {
-    b := make([]byte, n)
-    for i := range b {
-        b[i] = letterBytes[rand.Intn(len(letterBytes))]
-    }
-    return string(b)
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
 
 func GenerateChallenge() string {
-    return randStringBytes(32)
+	return randStringBytes(32)
 }
 
 type Challenge struct {
@@ -32,11 +32,11 @@ type ChallengeRepository interface {
 }
 
 type InMemoryChallengeRepository struct {
-	challenges map[string]interface{}
+	Challenges map[string]interface{}
 }
 
 func (repo *InMemoryChallengeRepository) FindByValue(value string) (*Challenge, error) {
-	authenticateResponse, ok := repo.challenges[value]
+	authenticateResponse, ok := repo.Challenges[value]
 	if !ok {
 		return nil, fmt.Errorf("Could not find challenge '%s'", value)
 	}
@@ -61,11 +61,11 @@ func (repo *InMemoryChallengeRepository) FindByValue(value string) (*Challenge, 
 }
 
 func (repo *InMemoryChallengeRepository) Create(challenge *Challenge) error {
-	repo.challenges[challenge.Value] = challenge.Response
+	repo.Challenges[challenge.Value] = challenge.Response
 	return nil
 }
 
 func (repo *InMemoryChallengeRepository) DeleteByValue(value string) error {
-	delete(repo.challenges, value)
+	delete(repo.Challenges, value)
 	return nil
 }
