@@ -29,7 +29,7 @@ var InvalidRequest = OAuth2Error{
 
 var UnauthorizedClient = OAuth2Error{
 	ErrorType:        "unauthorized_client",
-	ErrorDescription: `The client is not authorized to request an authorization code using this method.`,
+	ErrorDescription: `The client is not authorized to perform this request.`,
 	StatusCode:       http.StatusForbidden,
 }
 
@@ -55,6 +55,24 @@ var ServerError = OAuth2Error{
 	ErrorType:        "server_error",
 	ErrorDescription: `The authorization server encountered an unexpected condition that prevented it from fulfilling the request.`,
 	StatusCode:       http.StatusInternalServerError,
+}
+
+var InvalidClient = OAuth2Error{
+    ErrorType: "invalid_client",
+    ErrorDescription: `Client authentication failed (e.g., unknown client, client authentication included, or authentication method).`,
+    StatusCode: http.StatusUnauthorized,
+}
+
+var InvalidGrant = OAuth2Error{
+    ErrorType: "invalid_grant",
+    ErrorDescription: `The provided authorization grant or refresh token is invalid, expired, revoked, does not match the URI used in the authorization request, or was issued to another client.`,
+    StatusCode: http.StatusForbidden,
+}
+
+var UnsupportedGrantType = OAuth2Error{
+    ErrorType: "unsupported_grant_type",
+    ErrorDescription: `The authorization grant type is not supported by the authorization server.`,
+    StatusCode: http.StatusForbidden,
 }
 
 var TemporarilyUnavailable = OAuth2Error{

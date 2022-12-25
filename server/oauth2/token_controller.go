@@ -21,7 +21,13 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		return
 	}
 
-	// TODO: Authenticate client
+    // TODO: Authenticate client
+
+    tokenResponse := TokenResponse{
+        TokenType: "Bearer",
+        ExpiresIn: 60 * 60,
+        Scope:     request.Scope,
+    }
 
 	switch request.GrantType {
 	case GrantTypeAuthorizationCode:
@@ -31,6 +37,19 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 			controller.failAuthorization(InvalidRequest, c)
 			return
 		}
+
+        authorizationRequest, err := controller.codeState.Get(authorizationCodeRequest.Code)
+        if err != nil {
+            controller.logger.Error(fmt.Sprintf("Authorization code not found: %s", err))
+            controller.failAuthorization(InvalidGrant, c)
+        }
+
+        if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
+            controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
+            controller.failAuthorization(InvalidGrant, c)
+        }
+
+        tokenResponse.State = authorizationRequest.State
 		break
 	case GrantTypeRefreshToken:
 		var refreshTokenRequest AuthorizationCodeTokenRequest
@@ -43,13 +62,10 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 	case GrantTypePassword:
 	default:
 		controller.logger.Error(fmt.Sprintf("Grant type (%s) not supported", request.GrantType))
+        controller.failAuthorization(UnsupportedGrantType, c)
+        return
 	}
 
-	tokenResponse := TokenResponse{
-		TokenType: "Bearer",
-		ExpiresIn: 60 * 60,
-		Scope:     request.Scope,
-	}
 	c.JSON(http.StatusOK, tokenResponse)
 }
 
