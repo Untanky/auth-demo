@@ -77,8 +77,15 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 	case ResponseTypeCode:
 		controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'authorization_code' authorization method", "abc"))
 
+		code, err := controller.codeAuthorizationState.SetWithoutKey(request)
+		if err != nil {
+			controller.logger.Error(fmt.Sprintf("Cannot generate code: %s", err))
+			controller.failAuthorization(request, ServerError, c)
+			return
+		}
+
 		response := &AuthorizationResponse{
-			Code:  "abc",
+			Code:  code,
 			State: request.State,
 		}
 		redirectionURI.Query().Add("code", response.Code)

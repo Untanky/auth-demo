@@ -2,7 +2,7 @@ package challenge
 
 import (
 	"github.com/Untanky/iam-auth/oauth2"
-    "github.com/Untanky/iam-auth/utils"
+	"github.com/Untanky/iam-auth/utils"
 )
 
 type challengeKey string
