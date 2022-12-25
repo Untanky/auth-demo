@@ -33,20 +33,38 @@ func (challenge *challenge) BindAuthorizationState(request *oauth2.Authorization
 }
 
 type ChallengeRepository interface {
-	FindChallengeByKey(key challengeKey) (*challenge, error)
-	CreateChallenge() (*challenge, error)
-	UpdateChallenge(*challenge) error
-	DeleteChallenge(*challenge) error
-	DeleteChallengeByKey(key challengeKey) error
+	FindByKey(key challengeKey) (*challenge, error)
+	Create() (*challenge, error)
+	Update(*challenge) error
+	Delete(*challenge) error
+	DeleteByKey(key challengeKey) error
 }
 
-func GetAuthorizationStateFrom(repo ChallengeRepository) oauth2.GetAuthorizationState {
-	return func(key string) (*oauth2.AuthorizationRequest, error) {
-		challenge, err := repo.FindChallengeByKey(challengeKey(key))
+type challengeAuthorizationState struct {
+	repo ChallengeRepository
+}
 
-		if err != nil {
-			return nil, err
-		}
-		return challenge.authorization, nil
+func (state *challengeAuthorizationState) Get(key string) (*oauth2.AuthorizationRequest, error) {
+	challenge, err := state.repo.FindByKey(challengeKey(key))
+	if err != nil {
+		return nil, err
 	}
+
+	return challenge.authorization, nil
+}
+
+func (state *challengeAuthorizationState) Set(request *oauth2.AuthorizationRequest) (string, error) {
+	challenge, err := state.repo.Create()
+	if err != nil {
+		return "", err
+	}
+
+	challenge.authorization = request
+
+	err = state.repo.Update(challenge)
+	if err != nil {
+		return "", err
+	}
+
+	return string(challenge.key), nil
 }
