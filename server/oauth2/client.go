@@ -1,5 +1,7 @@
 package oauth2
 
+import "github.com/gin-gonic/gin"
+
 type clientType string
 
 type authenticationMethod string
@@ -44,8 +46,8 @@ type clientID string
 //
 // Defined https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata
 type ClientMetadata struct {
-    // REQUIRED. Unique Client Identifier. It MUST NOT be currently valid for any other registered Client.
-    ID clientID `json:"client_id"`
+	// REQUIRED. Unique Client Identifier. It MUST NOT be currently valid for any other registered Client.
+	ID clientID `json:"client_id"`
 	// OPTIONAL. Name of the Client to be presented to the End-User.
 	Name string `json:"client_name;omitempty"`
 	// OPTIONAL. Requested Client Authentication method for the Token Endpoint.
@@ -62,25 +64,25 @@ type ClientMetadata struct {
 }
 
 type Client struct {
-    ClientMetadata
-    // OPTIONAL. Client Secret. The same Client Secret value MUST NOT be assigned to multiple Clients.
-    Secret []byte `json:"client_secret;omitempty"`
-    // OPTIONAL. Time at which the Client Identifier was issued.
-    IssuedAt int64 `json:"client_id_issued_at;omitempty"`
-    // REQUIRED if client_secret is issued. Time at which the client_secret will expire or 0 if it will not expire.
-    SecretExpiresAt int64 `json:"client_secret_expires_at;omitempty"`
+	ClientMetadata
+	// OPTIONAL. Client Secret. The same Client Secret value MUST NOT be assigned to multiple Clients.
+	Secret []byte `json:"client_secret;omitempty"`
+	// OPTIONAL. Time at which the Client Identifier was issued.
+	IssuedAt int64 `json:"client_id_issued_at;omitempty"`
+	// REQUIRED if client_secret is issued. Time at which the client_secret will expire or 0 if it will not expire.
+	SecretExpiresAt int64 `json:"client_secret_expires_at;omitempty"`
 }
 
 // Response when a new client registers.
 //
 // Defined https://openid.net/specs/openid-connect-registration-1_0.html#RegistrationResponse
 type ClientRegistrationResponse struct {
-    Client
+	Client
 	// OPTIONAL. Registration Access Token that can be used at the Client Configuration Endpoint to perform subsequent operations upon the Client registration.
 	AccessToken string `json:"registration_access_token;omitempty"`
 	// OPTIONAL. Location of the Client Configuration Endpoint where the Registration Access Token can be used to perform subsequent operations upon the resulting Client registration.
 	RegistrationURI string `json:"registration_client_uri;omitempty"`
 }
 type ClientRepository interface {
-    FindClient(clientID clientID) (*Client, error)
+	FindClient(clientID clientID) (*Client, error)
 }

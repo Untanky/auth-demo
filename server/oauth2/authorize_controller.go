@@ -86,7 +86,6 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 			State: request.State,
 		}
 		redirectionURI.Query().Add("code", response.Code)
-		break
 	case ResponseTypeToken:
 		controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'implicit' authorization method", "abc"))
 
@@ -101,7 +100,6 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 		redirectionURI.Query().Add("scope", strings.Join(request.Scope, ""))
 		redirectionURI.Query().Add("expires_in", fmt.Sprint(response.ExpiresIn))
 		redirectionURI.Query().Add("token_type", response.TokenType)
-		break
 	default:
 		controller.logger.Error(fmt.Sprintf("Provided response type (%s) is unknown.", request.ResponseType))
 		controller.RedirectFailedAuthorization(redirectionURI, UnsupportedResponseType, c)

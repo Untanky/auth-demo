@@ -23,34 +23,8 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		return
 	}
 
-    var client *Client
-	{
-		clientAuthentication := c.Request.Header.Get("Authorization")
-		if !strings.HasPrefix("Basic", clientAuthentication) {
-			controller.logger.Error("Client cannot be authenticated")
-			c.Header("WWW-Authenticate", "Basic")
-			controller.failAuthorization(InvalidClient, c)
-			return
-		}
-		basicAuthentication := clientAuthentication[6:]
-		decodedBasicAuth, err := base64.RawURLEncoding.DecodeString(basicAuthentication)
-		if err != nil {
-            controller.logger.Error(fmt.Sprintf("Client cannot be authenticated"))
-			controller.failAuthorization(InvalidClient, c)
-			return
-		}
-        basicAuthComponents := strings.Split(string(decodedBasicAuth), ":")
-        clientID, password := clientID(basicAuthComponents[0]), basicAuthComponents[1]
-
-        client, err = controller.clientRepo.FindClient(clientID)
-        if err != nil {
-            controller.logger.Error(fmt.Sprintf("Client could not be found: %s", err))
-            controller.failAuthorization(InvalidClient, c)
-            return
-        }
-
-        if client.Secret
-	}
+	client, _ := controller.clientRepo.FindClient(request.ClientId)
+	controller.authenticate(client, c)
 
 	tokenResponse := TokenResponse{
 		TokenType: "Bearer",
@@ -79,7 +53,6 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		}
 
 		tokenResponse.State = authorizationRequest.State
-		break
 	case GrantTypeRefreshToken:
 		var refreshTokenRequest RefreshTokenRequest
 		if err := c.BindQuery(&refreshTokenRequest); err != nil {
@@ -90,8 +63,8 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 
 		// TODO: check if refresh token is valid
 		// TODO: check if refresh token was authored to the client
-		break
 	case GrantTypePassword:
+		fallthrough
 	default:
 		controller.logger.Error(fmt.Sprintf("Grant type (%s) not supported", request.GrantType))
 		controller.failAuthorization(UnsupportedGrantType, c)
@@ -99,6 +72,39 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tokenResponse)
+}
+
+func (controller *TokenController) authenticate(client *Client, c *gin.Context) bool {
+    if client == nil {
+        basicClient, ok := controller.authenticateWithBasicAuth(c)
+        client = basicClient
+        return ok
+    }
+
+	switch client.AuthenticationMethod {
+	case ClientSecretBasic:
+        basicClient, ok := controller.authenticateWithBasicAuth(c)
+        if basicClient.ID != client.ID {
+            controller.logger.Error("Client from basic auth and request params do not match")
+            return false
+        }
+        return ok
+	case ClientAuthenticationNone:
+		return true
+	case ClientSecretPost:
+		fallthrough
+	case ClientPrivateKey:
+		fallthrough
+	case ClientSecretJWT:
+		controller.logger.Error("Client cannot be authenticated")
+		c.Header("WWW-Authenticate", "Basic")
+		controller.failAuthorization(InvalidClient, c)
+		return false
+	}
+}
+
+func (controller *TokenController) authenticateWithBasicAuth(c *gin.Context) (*Client, bool) {
+
 }
 
 func (controller *TokenController) failAuthorization(err OAuth2Error, c *gin.Context) {
