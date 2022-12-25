@@ -6,7 +6,7 @@ type ReadCache[key comparable, value any] interface {
 
 type WriteCache[key comparable, value any] interface {
 	SetWithoutKey(value) (key, error)
-	SetKey(key, value) error
+	Set(key, value) error
 	Delete(key) error
 }
 
