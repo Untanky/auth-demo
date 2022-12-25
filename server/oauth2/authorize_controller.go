@@ -117,7 +117,7 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 }
 
 func (controller *AuthorizationController) failAuthorization(request *AuthorizationRequest, err OAuth2Error, c *gin.Context) {
-	controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'implicit' authorization method", "abc"))
+	controller.logger.Warn(err)
 
 	response := ErrorResponse{
 		OAuth2Error: err,
@@ -127,6 +127,7 @@ func (controller *AuthorizationController) failAuthorization(request *Authorizat
 }
 
 func (controller *AuthorizationController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
+    controller.logger.Warn(err)
 	redirectionURI.Query().Add("error", err.ErrorType)
 	redirectionURI.Query().Add("error_description", err.ErrorDescription)
 	if err.ErrorURI != "" {
