@@ -40,6 +40,12 @@ type ChallengeRepository interface {
 	DeleteByKey(key challengeKey) error
 }
 
+func AuthorizationStateFromChallengeRepo(repo ChallengeRepository) oauth2.AuthorizationState {
+    return &challengeAuthorizationState{
+        repo: repo,
+    }
+}
+
 type challengeAuthorizationState struct {
 	repo ChallengeRepository
 }
