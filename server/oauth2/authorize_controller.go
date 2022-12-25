@@ -2,6 +2,8 @@ package oauth2
 
 import (
 	"fmt"
+	"github.com/Untanky/iam-auth/jwt"
+	"github.com/Untanky/iam-auth/secret"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,6 +19,7 @@ type AuthorizeController struct {
 	authorizationController
 	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest]
 	codeAuthorizationState      utils.WriteCache[string, *AuthorizationRequest]
+	accessTokenService          jwt.JwtService[secret.KeyPair]
 }
 
 func (controller *AuthorizeController) StartAuthorization(c *gin.Context) {
@@ -91,8 +94,17 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 	case ResponseTypeToken:
 		controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'implicit' authorization method", "abc"))
 
+        jwt, err := controller.accessTokenService.Create(map[string]interface{}{
+
+        })
+        if err != nil {
+            controller.logger.Error(fmt.Sprintf("Failed to generate access token: %s", err))
+            controller.failAuthorization(request.State, ServerError, c)
+            return
+        }
+
 		response := &TokenResponse{
-			AccessToken: "abc",
+            AccessToken: string(jwt),
 			Scope:       request.Scope,
 			ExpiresIn:   60 * 60,
 			TokenType:   "Bearer",
