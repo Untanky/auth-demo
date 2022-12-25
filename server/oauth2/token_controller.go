@@ -10,8 +10,8 @@ import (
 )
 
 type TokenController struct {
-    authorizationController
-	codeState  utils.ReadCache[string, *AuthorizationRequest]
+	authorizationController
+	codeState utils.ReadCache[string, *AuthorizationRequest]
 }
 
 func (controller *TokenController) CreateAccessToken(c *gin.Context) {
@@ -51,7 +51,7 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 
 		if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
 			controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
-            controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
+			controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
 			return
 		}
 

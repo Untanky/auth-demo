@@ -6,8 +6,8 @@ import (
 )
 
 type authorizationController struct {
-    clientRepo utils.ViewRepository[clientID, *Client]
-	logger utils.Logger
+	clientRepo utils.ViewRepository[clientID, *Client]
+	logger     utils.Logger
 }
 
 func (controller *authorizationController) failAuthorization(state string, err OAuth2Error, c *gin.Context) {

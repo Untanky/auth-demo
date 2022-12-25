@@ -14,7 +14,7 @@ import (
 const AuthenticationEndpoint = "/"
 
 type AuthorizeController struct {
-    authorizationController
+	authorizationController
 	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest]
 	codeAuthorizationState      utils.WriteCache[string, *AuthorizationRequest]
 }
