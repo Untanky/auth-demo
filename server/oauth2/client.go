@@ -83,6 +83,3 @@ type ClientRegistrationResponse struct {
 	// OPTIONAL. Location of the Client Configuration Endpoint where the Registration Access Token can be used to perform subsequent operations upon the resulting Client registration.
 	RegistrationURI string `json:"registration_client_uri;omitempty"`
 }
-type ClientRepository interface {
-	FindClient(clientID clientID) (*Client, error)
-}

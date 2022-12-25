@@ -13,15 +13,11 @@ import (
 
 const AuthenticationEndpoint = "/"
 
-type AuthorizationState interface {
-	Get(key string) (*AuthorizationRequest, error)
-	Set(request *AuthorizationRequest) (string, error)
-}
-
 type AuthorizationController struct {
-	clientRepo         ClientRepository
-	authorizationState AuthorizationState
-	logger             utils.Logger
+	clientRepo                  utils.ViewRepository[clientID, *Client]
+	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest]
+	codeAuthorizationState      utils.WriteCache[string, *AuthorizationRequest]
+	logger                      utils.Logger
 }
 
 func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
@@ -32,7 +28,7 @@ func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
 		return
 	}
 
-	challenge, err := controller.authorizationState.Set(&request)
+	challenge, err := controller.challengeAuthorizationState.SetWithoutKey(&request)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Cannot generate challenge: %s", err))
 		controller.failAuthorization(&request, ServerError, c)
@@ -44,7 +40,7 @@ func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
 }
 
 func (controller *AuthorizationController) FinishAuthorization(request *AuthorizationRequest, c *gin.Context) {
-	client, err := controller.clientRepo.FindClient(request.ClientID)
+	client, err := controller.clientRepo.FindByID(request.ClientID)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client with ID (%s) is not found: %s", request.ClientID, err))
 		controller.failAuthorization(request, UnauthorizedClient, c)

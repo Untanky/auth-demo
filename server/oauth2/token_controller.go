@@ -10,8 +10,8 @@ import (
 )
 
 type TokenController struct {
-	clientRepo ClientRepository
-	codeState  AuthorizationState
+	clientRepo utils.ViewRepository[clientID, *Client]
+	codeState  utils.ReadCache[string, *AuthorizationRequest]
 	logger     utils.Logger
 }
 
@@ -23,7 +23,7 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		return
 	}
 
-	client, _ := controller.clientRepo.FindClient(request.ClientId)
+	client, _ := controller.clientRepo.FindByID(request.ClientId)
 	if !controller.authenticate(client, c) {
 		return
 	}
@@ -134,7 +134,7 @@ func (controller *TokenController) authenticateWithBasicAuth(clientAuthenticatio
 	basicAuthComponents := strings.Split(string(decodedBasicAuth), ":")
 	clientID, password := clientID(basicAuthComponents[0]), basicAuthComponents[1]
 
-	client, err := controller.clientRepo.FindClient(clientID)
+	client, err := controller.clientRepo.FindByID(clientID)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client could not be found: %s", err))
 		return nil, &InvalidClient
