@@ -51,6 +51,8 @@ type TokenRequest struct {
 	GrantType grantType `form:"grant_type"`
 	// OPTIONAL. The scope of the access request
 	Scope []string `form:"scope;omitempty"`
+	// REQUIRED, if the client is not authenticating with the authorization server.
+	ClientId clientID `form:"client_id;omitempty"`
 }
 
 type AuthorizationCodeTokenRequest struct {
@@ -60,9 +62,6 @@ type AuthorizationCodeTokenRequest struct {
 	// REQUIRED, if the "redirect_uri" parameter was included in the
 	// authorization request and their values MUST be identical.
 	RedirectURI string `form:"redirect_uri"`
-	// REQUIRED, if the client is not authenticating with the
-	// authorization server as described in Section 3.2.1.
-	ClientId clientID `form:"client_id;omitempty"`
 }
 
 type RefreshTokenRequest struct {

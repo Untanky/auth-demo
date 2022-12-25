@@ -13,10 +13,6 @@ import (
 
 const AuthenticationEndpoint = "/"
 
-type ClientRepository interface {
-	FindClient(clientID clientID) (*ClientMetadata, error)
-}
-
 type AuthorizationState interface {
 	Get(key string) (*AuthorizationRequest, error)
 	Set(request *AuthorizationRequest) (string, error)
