@@ -127,7 +127,7 @@ func (controller *AuthorizationController) failAuthorization(request *Authorizat
 }
 
 func (controller *AuthorizationController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
-    controller.logger.Warn(err)
+	controller.logger.Warn(err)
 	redirectionURI.Query().Add("error", err.ErrorType)
 	redirectionURI.Query().Add("error_description", err.ErrorDescription)
 	if err.ErrorURI != "" {
