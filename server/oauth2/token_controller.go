@@ -47,20 +47,20 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		if err != nil {
 			controller.logger.Error(fmt.Sprintf("Authorization code not found: %s", err))
 			controller.failAuthorization(InvalidGrant, c)
-            return
+			return
 		}
 
 		if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
 			controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
 			controller.failAuthorization(InvalidGrant, c)
-            return
+			return
 		}
 
-        if authorizationRequest.ClientID != client.ID {
-            controller.logger.Error(fmt.Sprintf("Authorization code was issued to another client (request client: %s, code client: %s)", authorizationRequest.ClientID, client.ID))
-            controller.failAuthorization(InvalidGrant, c)
-            return
-        }
+		if authorizationRequest.ClientID != client.ID {
+			controller.logger.Error(fmt.Sprintf("Authorization code was issued to another client (request client: %s, code client: %s)", authorizationRequest.ClientID, client.ID))
+			controller.failAuthorization(InvalidGrant, c)
+			return
+		}
 
 		tokenResponse.State = authorizationRequest.State
 	case GrantTypeRefreshToken:
@@ -85,28 +85,28 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 }
 
 func (controller *TokenController) authenticate(client *Client, c *gin.Context) bool {
-    if client == nil {
-        clientAuthentication := c.Request.Header.Get("Authorization")
-        basicClient, err := controller.authenticateWithBasicAuth(clientAuthentication)
-        if err != nil {
-            controller.failAuthorization(*err, c)
-            return false
-        }
+	if client == nil {
+		clientAuthentication := c.Request.Header.Get("Authorization")
+		basicClient, err := controller.authenticateWithBasicAuth(clientAuthentication)
+		if err != nil {
+			controller.failAuthorization(*err, c)
+			return false
+		}
 		client = basicClient
 		return true
 	}
 
 	switch client.AuthenticationMethod {
-    case ClientSecretBasic:
-        clientAuthentication := c.Request.Header.Get("Authorization")
+	case ClientSecretBasic:
+		clientAuthentication := c.Request.Header.Get("Authorization")
 		basicClient, err := controller.authenticateWithBasicAuth(clientAuthentication)
-        if err != nil {
-            controller.failAuthorization(*err, c)
-            return false
-        }
+		if err != nil {
+			controller.failAuthorization(*err, c)
+			return false
+		}
 		if basicClient.ID != client.ID {
 			controller.logger.Error("Client from basic auth and request params do not match")
-            controller.failAuthorization(InvalidClient, c)
+			controller.failAuthorization(InvalidClient, c)
 			return false
 		}
 		return true
@@ -129,7 +129,7 @@ func (controller *TokenController) authenticateWithBasicAuth(clientAuthenticatio
 	decodedBasicAuth, err := base64.RawURLEncoding.DecodeString(basicAuthentication)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client cannot be authenticated"))
-        return nil, &InvalidClient
+		return nil, &InvalidClient
 	}
 	basicAuthComponents := strings.Split(string(decodedBasicAuth), ":")
 	clientID, password := clientID(basicAuthComponents[0]), basicAuthComponents[1]
@@ -137,13 +137,13 @@ func (controller *TokenController) authenticateWithBasicAuth(clientAuthenticatio
 	client, err := controller.clientRepo.FindClient(clientID)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client could not be found: %s", err))
-        return nil, &InvalidClient
+		return nil, &InvalidClient
 	}
 
-    if string(client.Secret) != password {
-        controller.logger.Error(fmt.Sprintf("Client secret does not match: %s", err))
-        return nil, &InvalidClient
-    }
+	if string(client.Secret) != password {
+		controller.logger.Error(fmt.Sprintf("Client secret does not match: %s", err))
+		return nil, &InvalidClient
+	}
 
 	return client, nil
 }
