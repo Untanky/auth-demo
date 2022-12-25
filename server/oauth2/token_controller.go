@@ -10,16 +10,15 @@ import (
 )
 
 type TokenController struct {
-	clientRepo utils.ViewRepository[clientID, *Client]
+    authorizationController
 	codeState  utils.ReadCache[string, *AuthorizationRequest]
-	logger     utils.Logger
 }
 
 func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 	var request TokenRequest
 	if err := c.BindQuery(&request); err != nil {
 		controller.logger.Error(fmt.Sprintf("Cannot parse query parameters: %s", err))
-		controller.failAuthorization(InvalidRequest, c)
+		controller.failAuthorization("", InvalidRequest, c)
 		return
 	}
 
@@ -39,26 +38,26 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		var authorizationCodeRequest AuthorizationCodeTokenRequest
 		if err := c.BindQuery(&authorizationCodeRequest); err != nil {
 			controller.logger.Error(fmt.Sprintf("Cannot parse query parameters: %s", err))
-			controller.failAuthorization(InvalidRequest, c)
+			controller.failAuthorization("", InvalidRequest, c)
 			return
 		}
 
 		authorizationRequest, err := controller.codeState.Get(authorizationCodeRequest.Code)
 		if err != nil {
 			controller.logger.Error(fmt.Sprintf("Authorization code not found: %s", err))
-			controller.failAuthorization(InvalidGrant, c)
+			controller.failAuthorization("", InvalidGrant, c)
 			return
 		}
 
 		if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
 			controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
-			controller.failAuthorization(InvalidGrant, c)
+            controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
 			return
 		}
 
 		if authorizationRequest.ClientID != client.ID {
 			controller.logger.Error(fmt.Sprintf("Authorization code was issued to another client (request client: %s, code client: %s)", authorizationRequest.ClientID, client.ID))
-			controller.failAuthorization(InvalidGrant, c)
+			controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
 			return
 		}
 
@@ -67,7 +66,7 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		var refreshTokenRequest RefreshTokenRequest
 		if err := c.BindQuery(&refreshTokenRequest); err != nil {
 			controller.logger.Error(fmt.Sprintf("Cannot parse query parameters: %s", err))
-			controller.failAuthorization(InvalidRequest, c)
+			controller.failAuthorization("", InvalidRequest, c)
 			return
 		}
 
@@ -89,7 +88,7 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 		clientAuthentication := c.Request.Header.Get("Authorization")
 		basicClient, err := controller.authenticateWithBasicAuth(clientAuthentication)
 		if err != nil {
-			controller.failAuthorization(*err, c)
+			controller.failAuthorization("", *err, c)
 			return false
 		}
 		client = basicClient
@@ -101,12 +100,12 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 		clientAuthentication := c.Request.Header.Get("Authorization")
 		basicClient, err := controller.authenticateWithBasicAuth(clientAuthentication)
 		if err != nil {
-			controller.failAuthorization(*err, c)
+			controller.failAuthorization("", *err, c)
 			return false
 		}
 		if basicClient.ID != client.ID {
 			controller.logger.Error("Client from basic auth and request params do not match")
-			controller.failAuthorization(InvalidClient, c)
+			controller.failAuthorization("", InvalidClient, c)
 			return false
 		}
 		return true
@@ -117,7 +116,7 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 
 	controller.logger.Error("Client cannot be authenticated")
 	c.Header("WWW-Authenticate", "Basic")
-	controller.failAuthorization(InvalidClient, c)
+	controller.failAuthorization("", InvalidClient, c)
 	return false
 }
 
@@ -146,13 +145,4 @@ func (controller *TokenController) authenticateWithBasicAuth(clientAuthenticatio
 	}
 
 	return client, nil
-}
-
-func (controller *TokenController) failAuthorization(err OAuth2Error, c *gin.Context) {
-	controller.logger.Warn(err)
-
-	response := ErrorResponse{
-		OAuth2Error: err,
-	}
-	c.JSON(response.StatusCode, response)
 }

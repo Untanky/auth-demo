@@ -13,25 +13,24 @@ import (
 
 const AuthenticationEndpoint = "/"
 
-type AuthorizationController struct {
-	clientRepo                  utils.ViewRepository[clientID, *Client]
+type AuthorizeController struct {
+    authorizationController
 	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest]
 	codeAuthorizationState      utils.WriteCache[string, *AuthorizationRequest]
-	logger                      utils.Logger
 }
 
-func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
+func (controller *AuthorizeController) StartAuthorization(c *gin.Context) {
 	var request AuthorizationRequest
 	if err := c.BindQuery(&request); err != nil {
 		controller.logger.Error(fmt.Sprintf("Cannot parse query parameters: %s", err))
-		controller.failAuthorization(&request, InvalidRequest, c)
+		controller.failAuthorization(request.State, InvalidRequest, c)
 		return
 	}
 
 	challenge, err := controller.challengeAuthorizationState.SetWithoutKey(&request)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Cannot generate challenge: %s", err))
-		controller.failAuthorization(&request, ServerError, c)
+		controller.failAuthorization(request.State, ServerError, c)
 		return
 	}
 
@@ -39,11 +38,11 @@ func (controller *AuthorizationController) StartAuthorization(c *gin.Context) {
 	c.Redirect(http.StatusFound, fmt.Sprintf("%s?challenge=%s", AuthenticationEndpoint, challenge))
 }
 
-func (controller *AuthorizationController) FinishAuthorization(request *AuthorizationRequest, c *gin.Context) {
+func (controller *AuthorizeController) FinishAuthorization(request *AuthorizationRequest, c *gin.Context) {
 	client, err := controller.clientRepo.FindByID(request.ClientID)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client with ID (%s) is not found: %s", request.ClientID, err))
-		controller.failAuthorization(request, UnauthorizedClient, c)
+		controller.failAuthorization(request.State, UnauthorizedClient, c)
 		return
 	}
 
@@ -52,14 +51,14 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 		request.RedirectURI = client.RedirectionURIs[0]
 	} else if !slices.ContainsFunc(client.RedirectionURIs, func(uri string) bool { return uri == request.RedirectURI }) {
 		controller.logger.Error(fmt.Sprintf("Provided redirection URI (%s) not configured with client.", request.RedirectURI))
-		controller.failAuthorization(request, InvalidRequest, c)
+		controller.failAuthorization(request.State, InvalidRequest, c)
 		return
 	}
 
 	redirectionURI, err := url.Parse(request.RedirectURI)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Provided redirection URI (%s) cannot be parsed: %s", request.RedirectURI, err))
-		controller.failAuthorization(request, InvalidRequest, c)
+		controller.failAuthorization(request.State, InvalidRequest, c)
 		return
 	}
 
@@ -80,7 +79,7 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 		code, err := controller.codeAuthorizationState.SetWithoutKey(request)
 		if err != nil {
 			controller.logger.Error(fmt.Sprintf("Cannot generate code: %s", err))
-			controller.failAuthorization(request, ServerError, c)
+			controller.failAuthorization(request.State, ServerError, c)
 			return
 		}
 
@@ -113,17 +112,7 @@ func (controller *AuthorizationController) FinishAuthorization(request *Authoriz
 	c.Redirect(http.StatusFound, fmt.Sprint(redirectionURI))
 }
 
-func (controller *AuthorizationController) failAuthorization(request *AuthorizationRequest, err OAuth2Error, c *gin.Context) {
-	controller.logger.Warn(err)
-
-	response := ErrorResponse{
-		OAuth2Error: err,
-		State:       request.State,
-	}
-	c.JSON(response.StatusCode, response)
-}
-
-func (controller *AuthorizationController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
+func (controller *AuthorizeController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
 	controller.logger.Warn(err)
 	redirectionURI.Query().Add("error", err.ErrorType)
 	redirectionURI.Query().Add("error_description", err.ErrorDescription)
