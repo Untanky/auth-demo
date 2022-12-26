@@ -94,17 +94,15 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 	case ResponseTypeToken:
 		controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'implicit' authorization method", "abc"))
 
-        jwt, err := controller.accessTokenService.Create(map[string]interface{}{
-
-        })
-        if err != nil {
-            controller.logger.Error(fmt.Sprintf("Failed to generate access token: %s", err))
-            controller.failAuthorization(request.State, ServerError, c)
-            return
-        }
+		jwt, err := controller.accessTokenService.Create(map[string]interface{}{})
+		if err != nil {
+			controller.logger.Error(fmt.Sprintf("Failed to generate access token: %s", err))
+			controller.failAuthorization(request.State, ServerError, c)
+			return
+		}
 
 		response := &TokenResponse{
-            AccessToken: string(jwt),
+			AccessToken: string(jwt),
 			Scope:       request.Scope,
 			ExpiresIn:   60 * 60,
 			TokenType:   "Bearer",

@@ -82,24 +82,24 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		controller.logger.Error(fmt.Sprintf("Grant type (%s) not supported", request.GrantType))
 		controller.failAuthorization("", UnsupportedGrantType, c)
 		return
-    }
+	}
 
-    accessToken, err := controller.accessTokenService.Create(map[string]interface{}{})
-    if err != nil {
-        controller.logger.Error(fmt.Sprintf("Failed to generate access token: %s", err))
-        controller.failAuthorization("", ServerError, c)
-        return
-    }
+	accessToken, err := controller.accessTokenService.Create(map[string]interface{}{})
+	if err != nil {
+		controller.logger.Error(fmt.Sprintf("Failed to generate access token: %s", err))
+		controller.failAuthorization("", ServerError, c)
+		return
+	}
 
-    refreshToken, err := controller.refreshTokenService.Create(map[string]interface{}{})
-    if err != nil {
-        controller.logger.Error(fmt.Sprintf("Failed to generate refresh token: %s", err))
-        controller.failAuthorization("", ServerError, c)
-        return
-    }
+	refreshToken, err := controller.refreshTokenService.Create(map[string]interface{}{})
+	if err != nil {
+		controller.logger.Error(fmt.Sprintf("Failed to generate refresh token: %s", err))
+		controller.failAuthorization("", ServerError, c)
+		return
+	}
 
-    tokenResponse.AccessToken = string(accessToken)
-    tokenResponse.RefreshToken = string(refreshToken)
+	tokenResponse.AccessToken = string(accessToken)
+	tokenResponse.RefreshToken = string(refreshToken)
 
 	c.JSON(http.StatusOK, tokenResponse)
 }
