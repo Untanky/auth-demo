@@ -1,7 +1,5 @@
 package oauth2
 
-import "github.com/gin-gonic/gin"
-
 type clientType string
 
 type authenticationMethod string
