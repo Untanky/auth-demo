@@ -90,16 +90,17 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 		controller.failAuthorization("", ServerError, c)
 		return
 	}
-
-	refreshToken, err := controller.refreshTokenService.Create(map[string]interface{}{})
-	if err != nil {
-		controller.logger.Error(fmt.Sprintf("Failed to generate refresh token: %s", err))
-		controller.failAuthorization("", ServerError, c)
-		return
-	}
-
 	tokenResponse.AccessToken = string(accessToken)
-	tokenResponse.RefreshToken = string(refreshToken)
+
+	if request.GrantType != GrantTypeRefreshToken {
+		refreshToken, err := controller.refreshTokenService.Create(map[string]interface{}{})
+		if err != nil {
+			controller.logger.Error(fmt.Sprintf("Failed to generate refresh token: %s", err))
+			controller.failAuthorization("", ServerError, c)
+			return
+		}
+		tokenResponse.RefreshToken = string(refreshToken)
+	}
 
 	c.JSON(http.StatusOK, tokenResponse)
 }
