@@ -12,7 +12,7 @@ type AuthorizationState interface {
 }
 
 type foo[bar AuthorizationState] struct {
-    repo utils.Repository[string, bar]
+	repo utils.Repository[string, bar]
 }
 
 func (test *foo[bar]) Get(key string) (*oauth2.AuthorizationRequest, error) {

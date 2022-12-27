@@ -19,36 +19,6 @@ func main() {
 	//	}
 	//	defer db.Close()
 
-    var clientRepo utils.Repository[oauth2.ClientID, *oauth2.Client]
-	clientRepo = &utils.InMemoryRepository[oauth2.ClientID, *oauth2.Client]{
-
-    }
-    var challengeRepo utils.Repository[string, *challenge.Challenge]
-    var codeRepo utils.Repository[string, *challenge.Code]
-    challengeRepo = &utils.InMemoryRepository[string, *challenge.Challenge]{}
-	codeRepo = &utils.InMemoryRepository[string, *challenge.Code]{}
-	accessTokenService := jwt.JwtService[secret.KeyPair]{
-		Secret: secret.NewSecretPair(secret.KeyPair{
-			PublicKey:  secret.NewSecretValue("abc").GetSecret(),
-			PrivateKey: secret.NewSecretValue("abc").GetSecret(),
-		}),
-	}
-	refreshTokenService := jwt.JwtService[secret.SecretString]{
-		Secret: secret.NewSecretValue("abc"),
-	}
-
-	consoleLogger := utils.ConsoleLogger{}
-
-	service := oauth2.OAuth2Service{}
-	service.Init(
-	    clientRepo,
-		challenge.RepoToAuthorizationState(challengeRepo),
-		challenge.RepoToAuthorizationState(codeRepo),
-		accessTokenService,
-		refreshTokenService,
-		&consoleLogger,
-	)
-
 	//	userRepo := &webauthn.SqliteUserRepository{DB: db}
 	//	challengeRepo := &webauthn.InMemoryChallengeRepository{Challenges: map[string]interface{}{}}
 
@@ -62,6 +32,7 @@ func main() {
 
 	router.Use(cors.New(config))
 
+    service := createAuthorizationService()
 	service.SetupRouter(router.Group("api/oauth2/v1"))
 
 	//	authenticationController := webauthn.AuthenticationController{}
@@ -69,4 +40,56 @@ func main() {
 	//	authenticationController.Routes(router.Group("authenticate"))
 
 	router.Run()
+}
+
+func createAuthorizationService() oauth2.OAuth2Service {
+	clientRepo := &utils.InMemoryRepository[oauth2.ClientID, *oauth2.Client]{
+		CreateFunc: func() *oauth2.Client {
+			return &oauth2.Client{}
+		},
+		IdFunc: func(client *oauth2.Client) oauth2.ClientID {
+			return client.ID
+		},
+		Store: []*oauth2.Client{},
+	}
+	challengeRepo := &utils.InMemoryRepository[string, *challenge.Challenge]{
+		CreateFunc: func() *challenge.Challenge {
+			return &challenge.Challenge{}
+		},
+		IdFunc: func(challenge *challenge.Challenge) string {
+			return challenge.GetKey()
+		},
+		Store: []*challenge.Challenge{},
+	}
+	codeRepo := &utils.InMemoryRepository[string, *challenge.Code]{
+		CreateFunc: func() *challenge.Code {
+			return &challenge.Code{}
+		},
+		IdFunc: func(code *challenge.Code) string {
+			return code.GetKey()
+		},
+		Store: []*challenge.Code{},
+	}
+	accessTokenService := jwt.JwtService[secret.KeyPair]{
+		Secret: secret.NewSecretPair(secret.KeyPair{
+			PublicKey:  secret.NewSecretValue("abc").GetSecret(),
+			PrivateKey: secret.NewSecretValue("abc").GetSecret(),
+		}),
+	}
+	refreshTokenService := jwt.JwtService[secret.SecretString]{
+		Secret: secret.NewSecretValue("abc"),
+	}
+	consoleLogger := utils.ConsoleLogger{}
+
+	service := oauth2.OAuth2Service{}
+	service.Init(
+		clientRepo,
+		challenge.RepoToAuthorizationState[*challenge.Challenge](challengeRepo),
+		challenge.RepoToAuthorizationState[*challenge.Code](codeRepo),
+		accessTokenService,
+		refreshTokenService,
+		&consoleLogger,
+	)
+
+    return service
 }
