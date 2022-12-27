@@ -6,7 +6,7 @@ type ViewRepository[id comparable, value any] interface {
 
 type Repository[id comparable, value any] interface {
 	ViewRepository[id, value]
-	CreateEmpty() (value, error)
+    CreateEmpty() (value, error)
 	Create(value) error
 	Update(value) error
 	Delete(value) error

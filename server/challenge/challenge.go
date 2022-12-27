@@ -11,20 +11,20 @@ func generateChallengeKey() challengeKey {
 	return challengeKey(utils.RandString(32))
 }
 
-// A stateful authorization challenge
-type challenge struct {
+// A stateful authorization Challenge
+type Challenge struct {
 	key           challengeKey
 	authorization *oauth2.AuthorizationRequest
 }
 
-func (challenge *challenge) GetKey() string {
+func (challenge *Challenge) GetKey() string {
 	return string(challenge.key)
 }
 
-func (challenge *challenge) GetAuthorizationState() *oauth2.AuthorizationRequest {
+func (challenge *Challenge) GetAuthorizationState() *oauth2.AuthorizationRequest {
 	return challenge.authorization
 }
 
-func (challenge *challenge) BindAuthorizationState(request *oauth2.AuthorizationRequest) {
+func (challenge *Challenge) BindAuthorizationState(request *oauth2.AuthorizationRequest) {
 	challenge.authorization = request
 }

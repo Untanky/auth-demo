@@ -38,14 +38,14 @@ const (
 	ClientAuthenticationNone authenticationMethod = "none"
 )
 
-type clientID string
+type ClientID string
 
 // Response when a new client registers.
 //
 // Defined https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata
 type ClientMetadata struct {
 	// REQUIRED. Unique Client Identifier. It MUST NOT be currently valid for any other registered Client.
-	ID clientID `json:"client_id"`
+	ID ClientID `json:"client_id"`
 	// OPTIONAL. Name of the Client to be presented to the End-User.
 	Name string `json:"client_name;omitempty"`
 	// OPTIONAL. Requested Client Authentication method for the Token Endpoint.

@@ -13,7 +13,7 @@ type OAuth2Service struct {
 }
 
 func (receiver *OAuth2Service) Init(
-	clientRepo utils.Repository[clientID, *Client],
+	clientRepo utils.Repository[ClientID, *Client],
 	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest],
 	codeAuthorizationState utils.Cache[string, *AuthorizationRequest],
 	accessTokenService jwt.JwtService[secret.KeyPair],

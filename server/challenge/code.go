@@ -2,28 +2,29 @@ package challenge
 
 import (
 	"github.com/Untanky/iam-auth/oauth2"
+    "github.com/Untanky/iam-auth/utils"
 )
 
 type codeKey string
 
 func generateCodeKey() codeKey {
-	return codeKey(utils.RandStringBytes(12))
+	return codeKey(utils.RandString(12))
 }
 
-// A stateful authorization code
-type code struct {
+// A stateful authorization Code
+type Code struct {
 	key           codeKey
 	authorization *oauth2.AuthorizationRequest
 }
 
-func (code *code) GetKey() string {
+func (code *Code) GetKey() string {
 	return string(code.key)
 }
 
-func (code *code) GetAuthorizationState() *oauth2.AuthorizationRequest {
+func (code *Code) GetAuthorizationState() *oauth2.AuthorizationRequest {
 	return code.authorization
 }
 
-func (code *code) BindAuthorizationState(request *oauth2.AuthorizationRequest) {
+func (code *Code) BindAuthorizationState(request *oauth2.AuthorizationRequest) {
 	code.authorization = request
 }

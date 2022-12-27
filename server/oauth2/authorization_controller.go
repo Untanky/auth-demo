@@ -6,7 +6,7 @@ import (
 )
 
 type authorizationController struct {
-	clientRepo utils.ViewRepository[clientID, *Client]
+	clientRepo utils.ViewRepository[ClientID, *Client]
 	logger     utils.Logger
 }
 

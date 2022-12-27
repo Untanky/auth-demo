@@ -153,7 +153,7 @@ func (controller *TokenController) authenticateWithBasicAuth(clientAuthenticatio
 		return nil, &InvalidClient
 	}
 	basicAuthComponents := strings.Split(string(decodedBasicAuth), ":")
-	clientID, password := clientID(basicAuthComponents[0]), basicAuthComponents[1]
+	clientID, password := ClientID(basicAuthComponents[0]), basicAuthComponents[1]
 
 	client, err := controller.clientRepo.FindByID(clientID)
 	if err != nil {

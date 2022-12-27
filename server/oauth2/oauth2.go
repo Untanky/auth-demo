@@ -25,7 +25,7 @@ type AuthorizationRequest struct {
 	// REQUIRED. Value MUST be a valid response type.
 	ResponseType responseType `form:"response_Type"`
 	// REQUIRED. The client identifier.
-	ClientID clientID `form:"client_id"`
+	ClientID ClientID `form:"client_id"`
 	// OPTIONAL. The URI to redirect upon authorization success or failure
 	RedirectURI string `form:"redirect_uri;omitempty"`
 	// OPTIONAL. The scope of the access request
@@ -52,7 +52,7 @@ type TokenRequest struct {
 	// OPTIONAL. The scope of the access request
 	Scope []string `form:"scope;omitempty"`
 	// REQUIRED, if the client is not authenticating with the authorization server.
-	ClientId clientID `form:"client_id;omitempty"`
+	ClientId ClientID `form:"client_id;omitempty"`
 }
 
 type AuthorizationCodeTokenRequest struct {

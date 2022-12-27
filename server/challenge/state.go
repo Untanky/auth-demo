@@ -11,11 +11,11 @@ type AuthorizationState interface {
 	BindAuthorizationState(request *oauth2.AuthorizationRequest)
 }
 
-type foo struct {
-	repo utils.Repository[string, AuthorizationState]
+type foo[bar AuthorizationState] struct {
+    repo utils.Repository[string, bar]
 }
 
-func (test *foo) Get(key string) (*oauth2.AuthorizationRequest, error) {
+func (test *foo[bar]) Get(key string) (*oauth2.AuthorizationRequest, error) {
 	state, err := test.repo.FindByID(key)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (test *foo) Get(key string) (*oauth2.AuthorizationRequest, error) {
 	return state.GetAuthorizationState(), nil
 }
 
-func (test *foo) SetWithoutKey(value *oauth2.AuthorizationRequest) (string, error) {
+func (test *foo[bar]) SetWithoutKey(value *oauth2.AuthorizationRequest) (string, error) {
 	state, err := test.repo.CreateEmpty()
 	if err != nil {
 		return "", err
@@ -34,7 +34,7 @@ func (test *foo) SetWithoutKey(value *oauth2.AuthorizationRequest) (string, erro
 	return state.GetKey(), err
 }
 
-func (test *foo) Set(key string, value *oauth2.AuthorizationRequest) error {
+func (test *foo[bar]) Set(key string, value *oauth2.AuthorizationRequest) error {
 	state, err := test.repo.FindByID(key)
 	if err != nil {
 		return err
@@ -43,12 +43,12 @@ func (test *foo) Set(key string, value *oauth2.AuthorizationRequest) error {
 	return test.repo.Update(state)
 }
 
-func (test *foo) Delete(key string) error {
+func (test *foo[bar]) Delete(key string) error {
 	return test.repo.DeleteByKey(key)
 }
 
-func repoToAuthorizationState(repo utils.Repository[string, AuthorizationState]) utils.Cache[string, *oauth2.AuthorizationRequest] {
-	return &foo{
+func RepoToAuthorizationState[bar AuthorizationState](repo utils.Repository[string, bar]) utils.Cache[string, *oauth2.AuthorizationRequest] {
+	return &foo[bar]{
 		repo: repo,
 	}
 }
