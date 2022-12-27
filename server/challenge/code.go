@@ -5,20 +5,20 @@ import (
 	"github.com/Untanky/iam-auth/utils"
 )
 
-type codeKey string
+type CodeKey string
 
-func generateCodeKey() codeKey {
-	return codeKey(utils.RandString(12))
+func generateCodeKey() CodeKey {
+	return CodeKey(utils.RandString(12))
 }
 
 // A stateful authorization Code
 type Code struct {
-	key           codeKey
+	Key           CodeKey
 	authorization *oauth2.AuthorizationRequest
 }
 
 func (code *Code) GetKey() string {
-	return string(code.key)
+	return string(code.Key)
 }
 
 func (code *Code) GetAuthorizationState() *oauth2.AuthorizationRequest {

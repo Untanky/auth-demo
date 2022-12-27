@@ -54,7 +54,9 @@ func createAuthorizationService() oauth2.OAuth2Service {
 	}
 	challengeRepo := &utils.InMemoryRepository[string, *challenge.Challenge]{
 		CreateFunc: func() *challenge.Challenge {
-			return &challenge.Challenge{}
+			return &challenge.Challenge{
+                Key: challenge.ChallengeKey(utils.RandString(20)),
+            }
 		},
 		IdFunc: func(challenge *challenge.Challenge) string {
 			return challenge.GetKey()
@@ -63,7 +65,9 @@ func createAuthorizationService() oauth2.OAuth2Service {
 	}
 	codeRepo := &utils.InMemoryRepository[string, *challenge.Code]{
 		CreateFunc: func() *challenge.Code {
-			return &challenge.Code{}
+			return &challenge.Code{
+                Key: challenge.CodeKey(utils.RandString(12)),
+            }
 		},
 		IdFunc: func(code *challenge.Code) string {
 			return code.GetKey()
