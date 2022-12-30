@@ -22,8 +22,6 @@ func main() {
 
 	userRepo := &webauthn.InMemoryUserRepository{KnownUsers: []*webauthn.User{}}
 
-	w := webauthn.CreateWebAuthn(&conf.RelyingParty, conf.Authenticator, conf.PublicKeyCredentialParams, nil, nil)
-
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -32,11 +30,11 @@ func main() {
 
 	router.Use(cors.New(config))
 
-	service := createAuthorizationService()
+	service, w := createAuthorizationService(conf)
 	service.SetupRouter(router.Group("api/oauth2/v1"))
 
 	authenticationController := webauthn.AuthenticationController{}
-    authenticationController.Init(userRepo, nil, nil, w)
+	authenticationController.Init(userRepo, nil, nil, w)
 	authenticationController.Routes(router.Group("api/webauthn/v1"))
 
 	router.NoRoute(ProxyRequest)
@@ -44,7 +42,7 @@ func main() {
 	router.Run()
 }
 
-func createAuthorizationService() oauth2.OAuth2Service {
+func createAuthorizationService(conf *Config) (oauth2.OAuth2Service, *webauthn.WebAuthn) {
 	clientRepo := &utils.InMemoryRepository[oauth2.ClientID, *oauth2.Client]{
 		CreateFunc: func() *oauth2.Client {
 			return &oauth2.Client{}
@@ -97,5 +95,13 @@ func createAuthorizationService() oauth2.OAuth2Service {
 		&consoleLogger,
 	)
 
-	return service
+	webauthnService := webauthn.CreateWebAuthn(
+		&conf.RelyingParty,
+		conf.Authenticator,
+		conf.PublicKeyCredentialParams,
+		challenge.RepoToRegisterState[*challenge.Challenge](challengeRepo),
+        challenge.RepoToLoginState[*challenge.Challenge](challengeRepo),
+	)
+
+	return service, webauthnService
 }

@@ -87,7 +87,7 @@ func CreateWebAuthn(
 	authenticator string,
 	credentialTypes []*PublicKeyCredentialParameter,
 	registerState Cache[string, *RegisterResponse],
-	loginState WriteCache[string, *LoginResponse],
+	loginState Cache[string, *LoginResponse],
 ) *WebAuthn {
 	return &WebAuthn{
 		relyingParty:    relyingParty,
