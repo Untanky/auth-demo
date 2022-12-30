@@ -32,13 +32,13 @@ type UserRepository interface {
 }
 
 type InMemoryUserRepository struct {
-	knownUsers []*User
+	KnownUsers []*User
 }
 
 func (repo *InMemoryUserRepository) FindByIdentifier(identifier string) (*User, error) {
-	for i := 0; i < len(repo.knownUsers); i++ {
-		if identifier == repo.knownUsers[i].Identifier {
-			return repo.knownUsers[i], nil
+	for i := 0; i < len(repo.KnownUsers); i++ {
+		if identifier == repo.KnownUsers[i].Identifier {
+			return repo.KnownUsers[i], nil
 		}
 	}
 
@@ -46,6 +46,6 @@ func (repo *InMemoryUserRepository) FindByIdentifier(identifier string) (*User, 
 }
 
 func (repo *InMemoryUserRepository) Create(user *User) error {
-	repo.knownUsers = append(repo.knownUsers, user)
+	repo.KnownUsers = append(repo.KnownUsers, user)
 	return nil
 }

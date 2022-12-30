@@ -6,7 +6,8 @@ import (
 	"github.com/Untanky/iam-auth/oauth2"
 	"github.com/Untanky/iam-auth/secret"
 	"github.com/Untanky/iam-auth/utils"
-	"github.com/gin-contrib/cors"
+    "github.com/Untanky/iam-auth/webauthn"
+    "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,10 +20,10 @@ func main() {
 	//	}
 	//	defer db.Close()
 
-	//	userRepo := &webauthn.SqliteUserRepository{DB: db}
-	//	challengeRepo := &webauthn.InMemoryChallengeRepository{Challenges: map[string]interface{}{}}
+    userRepo := &webauthn.InMemoryUserRepository{KnownUsers: []*webauthn.User{}}
+    challengeRepo := &webauthn.InMemoryChallengeRepository{Challenges: map[string]interface{}{}}
 
-	//	w := webauthn.CreateWebAuthn(&conf.RelyingParty, conf.Authenticator, conf.PublicKeyCredentialParams, challengeRepo)
+    w := webauthn.CreateWebAuthn(&conf.RelyingParty, conf.Authenticator, conf.PublicKeyCredentialParams, challengeRepo)
 
 	router := gin.Default()
 
@@ -35,11 +36,11 @@ func main() {
     service := createAuthorizationService()
 	service.SetupRouter(router.Group("api/oauth2/v1"))
 
-    router.NoRoute(ProxyRequest)
+    authenticationController := webauthn.AuthenticationController{}
+    authenticationController.Init(userRepo, challengeRepo, w)
+    authenticationController.Routes(router.Group("api/webauthn/v1"))
 
-	//	authenticationController := webauthn.AuthenticationController{}
-	//	authenticationController.Init(userRepo, challengeRepo, w)
-	//	authenticationController.Routes(router.Group("authenticate"))
+    router.NoRoute(ProxyRequest)
 
 	router.Run()
 }

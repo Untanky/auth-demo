@@ -1,5 +1,5 @@
-const BASE_URL = import.meta.env.VITE_URL || 'http://localhost:8080';
-const AUTHENTICATE_URL = `${BASE_URL}/authenticate`;
+const BASE_URL = import.meta.env.VITE_URL || 'http://localhost:8080/api/webauthn/v1';
+const AUTHENTICATE_URL = `${BASE_URL}`;
 
 const bufferEncode = (value: Uint8Array): string => {
   return btoa(String.fromCharCode.apply(null, new Uint8Array(value)))
