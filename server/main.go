@@ -35,6 +35,8 @@ func main() {
     service := createAuthorizationService()
 	service.SetupRouter(router.Group("api/oauth2/v1"))
 
+    router.NoRoute(ProxyRequest)
+
 	//	authenticationController := webauthn.AuthenticationController{}
 	//	authenticationController.Init(userRepo, challengeRepo, w)
 	//	authenticationController.Routes(router.Group("authenticate"))
