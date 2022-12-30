@@ -8,7 +8,7 @@ import (
 type ConsoleLogger struct{}
 
 func (logger *ConsoleLogger) Log(level string, message any) {
-    fmt.Println(fmt.Sprintf("[%s] %s |", level, time.Now().Format("2006-02-01 15:04:05")), message)
+	fmt.Println(fmt.Sprintf("[%s] %s |", level, time.Now().Format("2006-02-01 15:04:05")), message)
 }
 
 func (logger *ConsoleLogger) Critical(message any) {

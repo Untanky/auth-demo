@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/Untanky/iam-auth/oauth2"
+	"github.com/Untanky/iam-auth/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,15 +13,17 @@ import (
 )
 
 type AuthenticationController struct {
-	userRepo      UserRepository
-	challengeRepo ChallengeRepository
-	webauthn      *WebAuthn
+	userRepo   UserRepository
+	authZState utils.Cache[string, *LoginResponse]
+	authNState utils.ReadCache[string, *oauth2.AuthorizationRequest]
+	webauthn   *WebAuthn
 }
 
-func (controller *AuthenticationController) Init(userRepo UserRepository, challengeRepo ChallengeRepository, webauthn *WebAuthn) {
+func (controller *AuthenticationController) Init(userRepo UserRepository, authZState utils.Cache[string, *LoginResponse], authNState utils.ReadCache[string, *oauth2.AuthorizationRequest], webauthn *WebAuthn) {
 	controller.userRepo = userRepo
-	controller.challengeRepo = challengeRepo
 	controller.webauthn = webauthn
+	controller.authNState = authNState
+	controller.authZState = authZState
 }
 
 func (controller *AuthenticationController) Authenticate(c *gin.Context) {
@@ -92,7 +96,7 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 
 	// Implementation of https://w3c.github.io/webauthn/#sctn-verifying-assertion
 	challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-	challenge, err := controller.challengeRepo.FindByValue(string(challengeId))
+	challange, err := controller.authZState.Get(string(challengeId))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": errors.New("no valid challenge found"),
@@ -101,7 +105,6 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 	}
 
 	// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-	l := challenge.Response.(LoginResponse)
 	user, err := controller.userRepo.FindByIdentifier(body.Response.UserHandle)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -110,7 +113,7 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 		return
 	}
 
-	err = controller.webauthn.FinishLogin(&body, &l, user)
+	err = controller.webauthn.FinishLogin(&body, challange, user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

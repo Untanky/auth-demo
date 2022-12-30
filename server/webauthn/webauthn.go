@@ -75,25 +75,33 @@ type PublicKeyCredentialParameter struct {
 }
 
 type WebAuthn struct {
-	challengeRepo   ChallengeRepository
+	loginState      WriteCache[string, *LoginResponse]
+	registerState   Cache[string, *RegisterResponse]
 	relyingParty    *RelyingParty
 	authenticator   string // convert to enum
 	credentialTypes []*PublicKeyCredentialParameter
 }
 
-func CreateWebAuthn(relyingParty *RelyingParty, authenticator string, credentialTypes []*PublicKeyCredentialParameter, challengeRepo ChallengeRepository) *WebAuthn {
+func CreateWebAuthn(
+	relyingParty *RelyingParty,
+	authenticator string,
+	credentialTypes []*PublicKeyCredentialParameter,
+	registerState Cache[string, *RegisterResponse],
+	loginState WriteCache[string, *LoginResponse],
+) *WebAuthn {
 	return &WebAuthn{
 		relyingParty:    relyingParty,
 		authenticator:   authenticator,
 		credentialTypes: credentialTypes,
-		challengeRepo:   challengeRepo,
+		loginState:      loginState,
+		registerState:   registerState,
 	}
 }
 
 func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
 	challenge := GenerateChallenge()
 
-	response := RegisterResponse{
+	response := &RegisterResponse{
 		Challenge:                      challenge,
 		RelyingParty:                   webauthn.relyingParty,
 		User:                           &UserResponse{Id: user.Identifier, Name: user.Identifier, DisplayName: user.Identifier},
@@ -105,45 +113,38 @@ func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
 		Attestation: "direct",
 	}
 
-	webauthn.challengeRepo.Create(&Challenge{
-		Value:    challenge,
-		Response: response,
-	})
+	webauthn.registerState.Set(challenge, response)
 	return response
 }
 
 func (webauthn *WebAuthn) BeginLogin(user *User) interface{} {
 	challenge := GenerateChallenge()
 
-	response := LoginResponse{
+	response := &LoginResponse{
 		Challenge:        challenge,
 		RelyingPartyId:   webauthn.relyingParty.Id,
 		AllowCredentials: user.AllowedCredentials(),
 		Timeout:          60000,
 	}
 
-	webauthn.challengeRepo.Create(&Challenge{
-		Value:    challenge,
-		Response: response,
-	})
+	webauthn.loginState.Set(challenge, response)
 	return response
 }
 
 func (webauthn *WebAuthn) FinishRegister(registerRequest RegisterRequest) (*User, error) {
 	challengeId, _ := base64.RawStdEncoding.DecodeString(registerRequest.Response.ClientData.Challenge)
-	challenge, _ := webauthn.challengeRepo.FindByValue(string(challengeId))
+	challenge, _ := webauthn.registerState.Get(string(challengeId))
 
 	// Implementation of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
-	r := (challenge.Response.(RegisterResponse))
-	err := webauthn.verifyCreateCredentials(&r, registerRequest.Response)
+	err := webauthn.verifyCreateCredentials(challenge, registerRequest.Response)
 	if err != nil {
 		return nil, err
 	}
 
-	webauthn.challengeRepo.DeleteByValue(string(challengeId))
+	webauthn.registerState.Delete(string(challengeId))
 
 	return &User{
-		Identifier: r.User.Name,
+		Identifier: challenge.User.Name,
 		Credentials: []Credential{
 			{
 				Id:         registerRequest.Response.AttestationObject.AuthnData.AttData.CredentialID,
