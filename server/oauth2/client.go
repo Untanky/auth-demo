@@ -55,10 +55,10 @@ type ClientMetadata struct {
 	// OPTIONAL. JSON array containing a list of the OAuth 2.0 response_type
 	// values that the Client is declaring that it will restrict itself to using.
 	// If omitted, the default is that the Client will use only the `code` Response Type.
-	ResponseTypes []responseType `json:"response_types;omitempty"`
+	ResponseTypes []ResponseType `json:"response_types;omitempty"`
 	// OPTIONAL. JSON array containing a list of the OAuth 2.0 Grant Types that the.
 	// Client is declaring that it will restrict itself to using.
-	GrantTypes []grantType `json:"grant_types;omitempty"`
+	GrantTypes []GrantType `json:"grant_types;omitempty"`
 }
 
 type Client struct {

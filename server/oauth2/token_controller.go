@@ -3,12 +3,13 @@ package oauth2
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/secret"
 	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strings"
 )
 
 type TokenController struct {
@@ -53,11 +54,11 @@ func (controller *TokenController) CreateAccessToken(c *gin.Context) {
 			return
 		}
 
-		if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
-			controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
-			controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
-			return
-		}
+		// if authorizationRequest.RedirectURI != authorizationCodeRequest.RedirectURI {
+		// 	controller.logger.Error("Redirect URIs do not match between authorize and token endpoint")
+		// 	controller.failAuthorization(authorizationRequest.State, InvalidGrant, c)
+		// 	return
+		// }
 
 		if authorizationRequest.ClientID != client.ID {
 			controller.logger.Error(fmt.Sprintf("Authorization code was issued to another client (request client: %s, code client: %s)", authorizationRequest.ClientID, client.ID))
@@ -116,6 +117,7 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 		client = basicClient
 		return true
 	}
+	fmt.Println("AUTH", client)
 
 	switch client.AuthenticationMethod {
 	case ClientSecretBasic:
@@ -133,7 +135,6 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 		return true
 	case ClientAuthenticationNone:
 		return true
-
 	}
 
 	controller.logger.Error("Client cannot be authenticated")

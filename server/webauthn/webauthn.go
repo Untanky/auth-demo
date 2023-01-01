@@ -29,6 +29,7 @@ type LoginRequest struct {
 
 type AuthenticateRequest struct {
 	Identifier string `json:"identifier"`
+	Challenge  string `json:"challenge"`
 }
 
 type UserResponse struct {
@@ -98,9 +99,7 @@ func CreateWebAuthn(
 	}
 }
 
-func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
-	challenge := GenerateChallenge()
-
+func (webauthn *WebAuthn) BeginRegister(challenge string, user *User) interface{} {
 	response := &RegisterResponse{
 		Challenge:                      challenge,
 		RelyingParty:                   webauthn.relyingParty,
@@ -117,9 +116,7 @@ func (webauthn *WebAuthn) BeginRegister(user *User) interface{} {
 	return response
 }
 
-func (webauthn *WebAuthn) BeginLogin(user *User) interface{} {
-	challenge := GenerateChallenge()
-
+func (webauthn *WebAuthn) BeginLogin(challenge string, user *User) interface{} {
 	response := &LoginResponse{
 		Challenge:        challenge,
 		RelyingPartyId:   webauthn.relyingParty.Id,

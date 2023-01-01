@@ -2,11 +2,12 @@ package oauth2
 
 import (
 	"fmt"
-	"github.com/Untanky/iam-auth/jwt"
-	"github.com/Untanky/iam-auth/secret"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/Untanky/iam-auth/jwt"
+	"github.com/Untanky/iam-auth/secret"
 
 	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
@@ -65,8 +66,9 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 		return
 	}
 
+	query := redirectionURI.Query()
 	if !redirectionURI.Query().Has("state") {
-		redirectionURI.Query().Add("state", request.State)
+		query.Add("state", request.State)
 	}
 
 	if !slices.Contains(client.ResponseTypes, request.ResponseType) {
@@ -90,7 +92,7 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 			Code:  code,
 			State: request.State,
 		}
-		redirectionURI.Query().Add("code", response.Code)
+		query.Add("code", response.Code)
 	case ResponseTypeToken:
 		controller.logger.Info(fmt.Sprintf("Authorization challenge ('%s') uses 'implicit' authorization method", "abc"))
 
@@ -108,15 +110,17 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 			TokenType:   "Bearer",
 			State:       request.State,
 		}
-		redirectionURI.Query().Add("access_token", response.AccessToken)
-		redirectionURI.Query().Add("scope", strings.Join(request.Scope, ""))
-		redirectionURI.Query().Add("expires_in", fmt.Sprint(response.ExpiresIn))
-		redirectionURI.Query().Add("token_type", response.TokenType)
+		query.Add("access_token", response.AccessToken)
+		query.Add("scope", strings.Join(request.Scope, ""))
+		query.Add("expires_in", fmt.Sprint(response.ExpiresIn))
+		query.Add("token_type", response.TokenType)
 	default:
 		controller.logger.Error(fmt.Sprintf("Provided response type (%s) is unknown.", request.ResponseType))
 		controller.RedirectFailedAuthorization(redirectionURI, UnsupportedResponseType, c)
 		return
 	}
+
+	redirectionURI.RawQuery = query.Encode()
 
 	controller.logger.Info(fmt.Sprintf("Redirecting authorization challenge ('%s') with success", "abc"))
 	c.Redirect(http.StatusFound, fmt.Sprint(redirectionURI))
@@ -124,11 +128,13 @@ func (controller *AuthorizeController) FinishAuthorization(request *Authorizatio
 
 func (controller *AuthorizeController) RedirectFailedAuthorization(redirectionURI *url.URL, err OAuth2Error, c *gin.Context) {
 	controller.logger.Warn(err)
+	query := redirectionURI.Query()
 	redirectionURI.Query().Add("error", err.ErrorType)
 	redirectionURI.Query().Add("error_description", err.ErrorDescription)
 	if err.ErrorURI != "" {
 		redirectionURI.Query().Add("error_uri", err.ErrorURI)
 	}
 
+	redirectionURI.RawQuery = query.Encode()
 	c.Redirect(http.StatusFound, fmt.Sprint(redirectionURI))
 }

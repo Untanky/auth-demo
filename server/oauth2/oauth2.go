@@ -1,21 +1,21 @@
 package oauth2
 
-type responseType string
-type grantType string
+type ResponseType string
+type GrantType string
 
 const (
 	// Request an authorization code
-	ResponseTypeCode responseType = "code"
+	ResponseTypeCode ResponseType = "code"
 	// Request an access token
-	ResponseTypeToken responseType = "token"
+	ResponseTypeToken ResponseType = "token"
 	// Exchange authorizaation code for access token
-	GrantTypeAuthorizationCode grantType = "authorization_code"
+	GrantTypeAuthorizationCode GrantType = "authorization_code"
 	// Exchange resource owner password for access token
-	GrantTypePassword grantType = "password"
+	GrantTypePassword GrantType = "password"
 	// Exchange client credentials for access token
-	GrantTypeClientCredentials grantType = "client_credentials"
+	GrantTypeClientCredentials GrantType = "client_credentials"
 	// Exchange refresh token for access token
-	GrantTypeRefreshToken grantType = "refreshToken"
+	GrantTypeRefreshToken GrantType = "refreshToken"
 )
 
 // Authorization request to begin the following OAuth flows:
@@ -23,7 +23,7 @@ const (
 // - implicit
 type AuthorizationRequest struct {
 	// REQUIRED. Value MUST be a valid response type.
-	ResponseType responseType `form:"response_Type"`
+	ResponseType ResponseType `form:"response_type"`
 	// REQUIRED. The client identifier.
 	ClientID ClientID `form:"client_id"`
 	// OPTIONAL. The URI to redirect upon authorization success or failure
@@ -48,11 +48,11 @@ type AuthorizationResponse struct {
 // Request to exchange credential for access token.
 type TokenRequest struct {
 	// REQUIRED. Value MUST be a valid grant type.
-	GrantType grantType `form:"grant_type"`
+	GrantType GrantType `form:"grant_type"`
 	// OPTIONAL. The scope of the access request
-	Scope []string `form:"scope;omitempty"`
+	Scope []string `form:"scope"`
 	// REQUIRED, if the client is not authenticating with the authorization server.
-	ClientId ClientID `form:"client_id;omitempty"`
+	ClientId ClientID `form:"client_id"`
 }
 
 type AuthorizationCodeTokenRequest struct {

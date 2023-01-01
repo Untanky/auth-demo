@@ -4,26 +4,39 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/Untanky/iam-auth/oauth2"
 	"github.com/Untanky/iam-auth/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 )
 
-type AuthenticationController struct {
-	userRepo   UserRepository
-	authZState utils.Cache[string, *LoginResponse]
-	authNState utils.ReadCache[string, *oauth2.AuthorizationRequest]
-	webauthn   *WebAuthn
+type AuthorizationFinisher interface {
+	FinishAuthorization(request *oauth2.AuthorizationRequest, c *gin.Context)
 }
 
-func (controller *AuthenticationController) Init(userRepo UserRepository, authZState utils.Cache[string, *LoginResponse], authNState utils.ReadCache[string, *oauth2.AuthorizationRequest], webauthn *WebAuthn) {
+type AuthenticationController struct {
+	userRepo              UserRepository
+	authZState            utils.Cache[string, *LoginResponse]
+	authNState            utils.ReadCache[string, *oauth2.AuthorizationRequest]
+	webauthn              *WebAuthn
+	authorizationFinisher AuthorizationFinisher
+}
+
+func (controller *AuthenticationController) Init(
+	userRepo UserRepository,
+	authZState utils.Cache[string, *LoginResponse],
+	authNState utils.ReadCache[string, *oauth2.AuthorizationRequest],
+	webauthn *WebAuthn,
+	authorizationFinisher AuthorizationFinisher,
+) {
 	controller.userRepo = userRepo
 	controller.webauthn = webauthn
 	controller.authNState = authNState
 	controller.authZState = authZState
+	controller.authorizationFinisher = authorizationFinisher
 }
 
 func (controller *AuthenticationController) Authenticate(c *gin.Context) {
@@ -40,10 +53,10 @@ func (controller *AuthenticationController) Authenticate(c *gin.Context) {
 
 	var response interface{}
 	if user != nil {
-		response = controller.webauthn.BeginLogin(user)
+		response = controller.webauthn.BeginLogin(body.Challenge, user)
 		c.Header("Next-Step", "login")
 	} else {
-		response = controller.webauthn.BeginRegister(&User{
+		response = controller.webauthn.BeginRegister(body.Challenge, &User{
 			Credentials: []Credential{},
 			Identifier:  body.Identifier,
 		})
@@ -64,6 +77,7 @@ func (controller *AuthenticationController) Register(c *gin.Context) {
 	}
 
 	user, err := controller.webauthn.FinishRegister(body)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "could not validate registration",
@@ -81,7 +95,9 @@ func (controller *AuthenticationController) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
+	authNState, _ := controller.authNState.Get(string(challengeId))
+	controller.authorizationFinisher.FinishAuthorization(authNState, c)
 }
 
 func (controller *AuthenticationController) Login(c *gin.Context) {
@@ -121,7 +137,8 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	authNState, _ := controller.authNState.Get(string(challengeId))
+	controller.authorizationFinisher.FinishAuthorization(authNState, c)
 }
 
 func (controller *AuthenticationController) Routes(rg *gin.RouterGroup) {

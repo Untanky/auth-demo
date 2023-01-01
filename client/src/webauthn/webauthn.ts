@@ -13,7 +13,8 @@ interface AuthenticationResponse {
 }
 
 export const authenticate = async (identifier: string): Promise<AuthenticationResponse> => {
-  const body = JSON.stringify({ identifier });
+  const challenge = new URLSearchParams(window.location.search).get('challenge');
+  const body = JSON.stringify({ identifier, challenge });
   const response = await fetch(
     AUTHENTICATE_URL, 
     {
@@ -59,7 +60,11 @@ const register = async (createOptions: PublicKeyCredentialCreationOptions): Prom
     // @ts-ignore
     const body = { id: credential.id, type: credential.type, rawId: bufferEncode(credential.rawId), response: { attestationObject: bufferEncode(credential.response.attestationObject), clientDataJSON: bufferEncode(credential.response.clientDataJSON) } };
   
-    await fetch(`${AUTHENTICATE_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await fetch(`${AUTHENTICATE_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((response) => {
+      if (response.redirected) {
+          window.location.href = response.url;
+      }
+    });
   } else {
     throw new Error('Unknown error');
   }
@@ -99,7 +104,11 @@ const login = async (requestOptions: PublicKeyCredentialRequestOptions): Promise
       }
     };
 
-    await fetch(`${AUTHENTICATE_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await fetch(`${AUTHENTICATE_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((response) => {
+      if (response.redirected) {
+          window.location.href = response.url;
+      }
+    });
   } else {
     throw new Error('Error');
   }

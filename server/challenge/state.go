@@ -1,7 +1,8 @@
 package challenge
 
 import (
-	"github.com/Untanky/iam-auth/oauth2"
+    "fmt"
+    "github.com/Untanky/iam-auth/oauth2"
 	"github.com/Untanky/iam-auth/utils"
 	"github.com/Untanky/iam-auth/webauthn"
 )
@@ -118,6 +119,9 @@ type registerStateCache[bar RegisterState] struct {
 
 func (test *registerStateCache[bar]) Get(key string) (*webauthn.RegisterResponse, error) {
 	state, err := test.repo.FindByID(key)
+
+    fmt.Println(state, err)
+
 	if err != nil {
 		return nil, err
 	}

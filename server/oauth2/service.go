@@ -8,7 +8,7 @@ import (
 )
 
 type OAuth2Service struct {
-	authorizeController *AuthorizeController
+	AuthorizeController *AuthorizeController
 	tokenController     *TokenController
 }
 
@@ -20,7 +20,7 @@ func (receiver *OAuth2Service) Init(
 	refreshTokenService jwt.JwtService[secret.SecretString],
 	logger utils.Logger,
 ) {
-	receiver.authorizeController = &AuthorizeController{
+	receiver.AuthorizeController = &AuthorizeController{
 		authorizationController: authorizationController{
 			clientRepo: clientRepo,
 			logger:     logger,
@@ -42,7 +42,7 @@ func (receiver *OAuth2Service) Init(
 }
 
 func (receiver *OAuth2Service) SetupRouter(router gin.IRouter) {
-	router.GET("/authorize", receiver.authorizeController.StartAuthorization)
-	router.POST("/authorize", receiver.authorizeController.StartAuthorization)
+	router.GET("/authorize", receiver.AuthorizeController.StartAuthorization)
+	router.POST("/authorize", receiver.AuthorizeController.StartAuthorization)
 	router.POST("/token", receiver.tokenController.CreateAccessToken)
 }
