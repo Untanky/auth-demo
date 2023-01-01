@@ -140,9 +140,3 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 	authNState, _ := controller.authNState.Get(string(challengeId))
 	controller.authorizationFinisher.FinishAuthorization(authNState, c)
 }
-
-func (controller *AuthenticationController) Routes(rg *gin.RouterGroup) {
-	rg.POST("", controller.Authenticate)
-	rg.POST("/register", controller.Register)
-	rg.POST("/login", controller.Login)
-}

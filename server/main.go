@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/Untanky/iam-auth/challenge"
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/oauth2"
 	"github.com/Untanky/iam-auth/secret"
@@ -14,15 +13,13 @@ import (
 )
 
 func main() {
-	conf, _ := ReadConfig()
+	conf, _ := webauthn.ReadConfig()
 
 	//	db, err := ConnectDB()
 	//	if err != nil {
 	//		panic(err)
 	//	}
 	//	defer db.Close()
-
-	userRepo := &webauthn.InMemoryUserRepository{KnownUsers: []*webauthn.User{}}
 
 	router := gin.Default()
 
@@ -32,19 +29,16 @@ func main() {
 
 	router.Use(cors.New(config))
 
-	oauth2Service, webauthnService, challengeRepo := createAuthorizationService(conf)
-	oauth2Service.SetupRouter(router.Group("api/oauth2/v1"))
-
-	authenticationController := webauthn.AuthenticationController{}
-	authenticationController.Init(userRepo, challenge.RepoToLoginState(challengeRepo), challenge.RepoToAuthorizationState(challengeRepo), webauthnService, oauth2Service.AuthorizeController)
-	authenticationController.Routes(router.Group("api/webauthn/v1"))
+	oauth2Module, webauthnModule, _ := createAuthorizationService(conf)
+	oauth2Module.SetupRouter(router.Group("api/oauth2/v1"))
+	webauthnModule.SetupRouter(router.Group("api/webauthn/v1"))
 
 	router.NoRoute(ProxyRequest)
 
 	router.Run()
 }
 
-func createAuthorizationService(conf *Config) (oauth2.OAuth2Service, *webauthn.WebAuthn, utils.Repository[string, *challenge.Challenge]) {
+func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module, utils.Repository[string, *challenge.Challenge]) {
 	clientRepo := &utils.InMemoryRepository[oauth2.ClientID, *oauth2.Client]{
 		CreateFunc: func() *oauth2.Client {
 			return &oauth2.Client{}
@@ -66,7 +60,7 @@ func createAuthorizationService(conf *Config) (oauth2.OAuth2Service, *webauthn.W
 		},
 	})
 
-	fmt.Println(clientRepo.FindByID("abc"))
+	userRepo := &webauthn.InMemoryUserRepository{KnownUsers: []*webauthn.User{}}
 
 	challengeRepo := &utils.InMemoryRepository[string, *challenge.Challenge]{
 		CreateFunc: func() *challenge.Challenge {
@@ -138,8 +132,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 	}
 	consoleLogger := utils.ConsoleLogger{}
 
-	service := oauth2.OAuth2Service{}
-	service.Init(
+	oauth2Module := oauth2.Init(
 		clientRepo,
 		challenge.RepoToAuthorizationState[*challenge.Challenge](challengeRepo),
 		challenge.RepoToAuthorizationState[*challenge.Code](codeRepo),
@@ -148,13 +141,14 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 		&consoleLogger,
 	)
 
-	webauthnService := webauthn.CreateWebAuthn(
-		&conf.RelyingParty,
-		conf.Authenticator,
-		conf.PublicKeyCredentialParams,
+	webauthnModule := webauthn.Init(
+		conf,
+		userRepo,
 		challenge.RepoToRegisterState[*challenge.Challenge](challengeRepo),
 		challenge.RepoToLoginState[*challenge.Challenge](challengeRepo),
+		challenge.RepoToAuthorizationState[*challenge.Challenge](challengeRepo),
+		oauth2Module.AuthorizeController,
 	)
 
-	return service, webauthnService, challengeRepo
+	return oauth2Module, webauthnModule, challengeRepo
 }

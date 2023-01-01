@@ -7,20 +7,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type OAuth2Service struct {
+type OAuth2Module struct {
 	AuthorizeController *AuthorizeController
 	tokenController     *TokenController
 }
 
-func (receiver *OAuth2Service) Init(
+func Init(
 	clientRepo utils.Repository[ClientID, *Client],
 	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest],
 	codeAuthorizationState utils.Cache[string, *AuthorizationRequest],
 	accessTokenService jwt.JwtService[secret.KeyPair],
 	refreshTokenService jwt.JwtService[secret.SecretString],
 	logger utils.Logger,
-) {
-	receiver.AuthorizeController = &AuthorizeController{
+) *OAuth2Module {
+	authorizeController := &AuthorizeController{
 		authorizationController: authorizationController{
 			clientRepo: clientRepo,
 			logger:     logger,
@@ -30,7 +30,7 @@ func (receiver *OAuth2Service) Init(
 		accessTokenService:          accessTokenService,
 	}
 
-	receiver.tokenController = &TokenController{
+	tokenController := &TokenController{
 		authorizationController: authorizationController{
 			clientRepo: clientRepo,
 			logger:     logger,
@@ -39,10 +39,15 @@ func (receiver *OAuth2Service) Init(
 		accessTokenService:  accessTokenService,
 		refreshTokenService: refreshTokenService,
 	}
+
+	return &OAuth2Module{
+		tokenController:     tokenController,
+		AuthorizeController: authorizeController,
+	}
 }
 
-func (receiver *OAuth2Service) SetupRouter(router gin.IRouter) {
-	router.GET("/authorize", receiver.AuthorizeController.StartAuthorization)
-	router.POST("/authorize", receiver.AuthorizeController.StartAuthorization)
-	router.POST("/token", receiver.tokenController.CreateAccessToken)
+func (module *OAuth2Module) SetupRouter(router gin.IRouter) {
+	router.GET("/authorize", module.AuthorizeController.StartAuthorization)
+	router.POST("/authorize", module.AuthorizeController.StartAuthorization)
+	router.POST("/token", module.tokenController.CreateAccessToken)
 }
