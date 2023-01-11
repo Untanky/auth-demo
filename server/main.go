@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 
 	"github.com/Untanky/iam-auth/challenge"
 	"github.com/Untanky/iam-auth/core"
@@ -27,6 +26,10 @@ func main() {
 	//	}
 	//	defer db.Close()
 
+	if isProduction {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -39,7 +42,11 @@ func main() {
 	oauth2Module.SetupRouter(router.Group("api/oauth2/v1"))
 	webauthnModule.SetupRouter(router.Group("api/webauthn/v1"))
 
-	router.NoRoute(ProxyRequest)
+	if isProduction {
+		HostClient(router)
+	} else {
+		router.NoRoute(ProxyRequest)
+	}
 
 	router.Run()
 }
@@ -111,11 +118,6 @@ func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module
 		},
 	)
 
-	fmt.Println("Public", string(pubPEM))
-	fmt.Println("Private", string(keyPEM))
-
-	
-
 	accessTokenService := jwt.JwtService[secret.KeyPair]{
 		Method: jwt.RS256,
 		Secret: secret.NewSecretPair(secret.KeyPair{
@@ -126,7 +128,6 @@ func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module
 
 	refreshKey := make([]byte, 64)
 	rand.Read(refreshKey)
-	fmt.Println("Refresh", string(refreshKey))
 	refreshTokenService := jwt.JwtService[secret.SecretString]{
 		Method: jwt.HS256,
 		Secret: secret.NewSecretValue(string(refreshKey)),
