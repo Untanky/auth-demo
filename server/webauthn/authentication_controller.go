@@ -7,34 +7,26 @@ import (
 	"net/http"
 
 	"github.com/Untanky/iam-auth/core"
-	"github.com/Untanky/iam-auth/oauth2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 )
 
-type AuthorizationFinisher interface {
-	FinishAuthorization(request *oauth2.AuthorizationRequest, c *gin.Context)
-}
-
 type AuthenticationController struct {
 	userRepo              UserRepository
 	authZState            core.Cache[string, *LoginResponse]
-	authNState            core.ReadCache[string, *oauth2.AuthorizationRequest]
 	webauthn              *WebAuthn
-	authorizationFinisher AuthorizationFinisher
+	authorizationFinisher core.AuthorizationFinisher
 }
 
 func (controller *AuthenticationController) Init(
 	userRepo UserRepository,
 	authZState core.Cache[string, *LoginResponse],
-	authNState core.ReadCache[string, *oauth2.AuthorizationRequest],
 	webauthn *WebAuthn,
-	authorizationFinisher AuthorizationFinisher,
+	authorizationFinisher core.AuthorizationFinisher,
 ) {
 	controller.userRepo = userRepo
 	controller.webauthn = webauthn
-	controller.authNState = authNState
 	controller.authZState = authZState
 	controller.authorizationFinisher = authorizationFinisher
 }
@@ -96,8 +88,7 @@ func (controller *AuthenticationController) Register(c *gin.Context) {
 	}
 
 	challengeId, _ := base64.RawStdEncoding.DecodeString(body.Response.ClientData.Challenge)
-	authNState, _ := controller.authNState.Get(string(challengeId))
-	controller.authorizationFinisher.FinishAuthorization(authNState, c)
+	controller.authorizationFinisher.FinishAuthorization(string(challengeId), c)
 }
 
 func (controller *AuthenticationController) Login(c *gin.Context) {
@@ -137,6 +128,5 @@ func (controller *AuthenticationController) Login(c *gin.Context) {
 		return
 	}
 
-	authNState, _ := controller.authNState.Get(string(challengeId))
-	controller.authorizationFinisher.FinishAuthorization(authNState, c)
+	controller.authorizationFinisher.FinishAuthorization(string(challengeId), c)
 }

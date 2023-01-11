@@ -1,4 +1,4 @@
-package utils
+package core
 
 type Logger interface {
 	Critical(message any)

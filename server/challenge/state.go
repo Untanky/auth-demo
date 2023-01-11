@@ -63,7 +63,7 @@ func (test *authorizationStateCache[bar]) Set(key string, value *oauth2.Authoriz
 }
 
 func (test *authorizationStateCache[bar]) Delete(key string) error {
-	return test.repo.DeleteByKey(key)
+	return test.repo.DeleteByID(key)
 }
 
 func RepoToAuthorizationState[bar AuthorizationState](repo core.Repository[string, bar]) core.Cache[string, *oauth2.AuthorizationRequest] {
@@ -105,7 +105,7 @@ func (test *loginStateCache[bar]) Set(key string, value *webauthn.LoginResponse)
 }
 
 func (test *loginStateCache[bar]) Delete(key string) error {
-	return test.repo.DeleteByKey(key)
+	return test.repo.DeleteByID(key)
 }
 
 func RepoToLoginState[bar LoginState](repo core.Repository[string, bar]) core.Cache[string, *webauthn.LoginResponse] {
@@ -150,7 +150,7 @@ func (test *registerStateCache[bar]) Set(key string, value *webauthn.RegisterRes
 }
 
 func (test *registerStateCache[bar]) Delete(key string) error {
-	return test.repo.DeleteByKey(key)
+	return test.repo.DeleteByID(key)
 }
 
 func RepoToRegisterState[bar RegisterState](repo core.Repository[string, bar]) core.Cache[string, *webauthn.RegisterResponse] {

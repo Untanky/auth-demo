@@ -4,7 +4,6 @@ import (
 	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/secret"
-	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,11 +14,11 @@ type OAuth2Module struct {
 
 func Init(
 	clientRepo core.Repository[ClientID, *Client],
-	challengeAuthorizationState core.WriteCache[string, *AuthorizationRequest],
+	challengeAuthorizationState core.Cache[string, *AuthorizationRequest],
 	codeAuthorizationState core.Cache[string, *AuthorizationRequest],
 	accessTokenService jwt.JwtService[secret.KeyPair],
 	refreshTokenService jwt.JwtService[secret.SecretString],
-	logger utils.Logger,
+	logger core.Logger,
 ) *OAuth2Module {
 	authorizeController := &AuthorizeController{
 		authorizationController: authorizationController{

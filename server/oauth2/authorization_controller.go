@@ -2,13 +2,12 @@ package oauth2
 
 import (
 	"github.com/Untanky/iam-auth/core"
-	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
 )
 
 type authorizationController struct {
 	clientRepo core.ViewRepository[ClientID, *Client]
-	logger     utils.Logger
+	logger     core.Logger
 }
 
 func (controller *authorizationController) failAuthorization(state string, err OAuth2Error, c *gin.Context) {

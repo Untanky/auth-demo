@@ -18,7 +18,7 @@ const AuthenticationEndpoint = "/"
 
 type AuthorizeController struct {
 	authorizationController
-	challengeAuthorizationState core.WriteCache[string, *AuthorizationRequest]
+	challengeAuthorizationState core.Cache[string, *AuthorizationRequest]
 	codeAuthorizationState      core.WriteCache[string, *AuthorizationRequest]
 	accessTokenService          jwt.JwtService[secret.KeyPair]
 }
@@ -42,7 +42,14 @@ func (controller *AuthorizeController) StartAuthorization(c *gin.Context) {
 	c.Redirect(http.StatusFound, fmt.Sprintf("%s?challenge=%s", AuthenticationEndpoint, challenge))
 }
 
-func (controller *AuthorizeController) FinishAuthorization(request *AuthorizationRequest, c *gin.Context) {
+func (controller *AuthorizeController) FinishAuthorization(challenge string, c *gin.Context) {
+	request, err := controller.challengeAuthorizationState.Get(challenge)
+	if err != nil {
+		controller.logger.Error(fmt.Sprintf("No challenge key %s found: %s", challenge, err))
+		controller.failAuthorization(request.State, InvalidRequest, c)
+		return
+	}
+
 	client, err := controller.clientRepo.FindByID(request.ClientID)
 	if err != nil {
 		controller.logger.Error(fmt.Sprintf("Client with ID (%s) is not found: %s", request.ClientID, err))

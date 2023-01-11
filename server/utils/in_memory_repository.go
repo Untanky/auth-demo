@@ -39,10 +39,10 @@ func (repo *InMemoryRepository[i, v]) Update(value v) error {
 }
 
 func (repo *InMemoryRepository[i, v]) Delete(value v) error {
-	return repo.DeleteByKey(repo.IdFunc(value))
+	return repo.DeleteByID(repo.IdFunc(value))
 }
 
-func (repo *InMemoryRepository[i, v]) DeleteByKey(id i) error {
+func (repo *InMemoryRepository[i, v]) DeleteByID(id i) error {
 	for i := 0; i < len(repo.Store); i++ {
 		if id == repo.IdFunc(repo.Store[i]) {
 			repo.Store = append(repo.Store[:i], repo.Store[i+1:]...)
