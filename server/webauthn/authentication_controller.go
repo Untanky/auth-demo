@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/oauth2"
-	"github.com/Untanky/iam-auth/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
@@ -19,16 +19,16 @@ type AuthorizationFinisher interface {
 
 type AuthenticationController struct {
 	userRepo              UserRepository
-	authZState            utils.Cache[string, *LoginResponse]
-	authNState            utils.ReadCache[string, *oauth2.AuthorizationRequest]
+	authZState            core.Cache[string, *LoginResponse]
+	authNState            core.ReadCache[string, *oauth2.AuthorizationRequest]
 	webauthn              *WebAuthn
 	authorizationFinisher AuthorizationFinisher
 }
 
 func (controller *AuthenticationController) Init(
 	userRepo UserRepository,
-	authZState utils.Cache[string, *LoginResponse],
-	authNState utils.ReadCache[string, *oauth2.AuthorizationRequest],
+	authZState core.Cache[string, *LoginResponse],
+	authNState core.ReadCache[string, *oauth2.AuthorizationRequest],
 	webauthn *WebAuthn,
 	authorizationFinisher AuthorizationFinisher,
 ) {

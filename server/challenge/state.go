@@ -3,8 +3,8 @@ package challenge
 import (
 	"fmt"
 
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/oauth2"
-	"github.com/Untanky/iam-auth/utils"
 	"github.com/Untanky/iam-auth/webauthn"
 )
 
@@ -31,7 +31,7 @@ type RegisterState interface {
 }
 
 type authorizationStateCache[bar AuthorizationState] struct {
-	repo utils.Repository[string, bar]
+	repo core.Repository[string, bar]
 }
 
 func (test *authorizationStateCache[bar]) Get(key string) (*oauth2.AuthorizationRequest, error) {
@@ -66,14 +66,14 @@ func (test *authorizationStateCache[bar]) Delete(key string) error {
 	return test.repo.DeleteByKey(key)
 }
 
-func RepoToAuthorizationState[bar AuthorizationState](repo utils.Repository[string, bar]) utils.Cache[string, *oauth2.AuthorizationRequest] {
+func RepoToAuthorizationState[bar AuthorizationState](repo core.Repository[string, bar]) core.Cache[string, *oauth2.AuthorizationRequest] {
 	return &authorizationStateCache[bar]{
 		repo: repo,
 	}
 }
 
 type loginStateCache[bar LoginState] struct {
-	repo utils.Repository[string, bar]
+	repo core.Repository[string, bar]
 }
 
 func (test *loginStateCache[bar]) Get(key string) (*webauthn.LoginResponse, error) {
@@ -108,14 +108,14 @@ func (test *loginStateCache[bar]) Delete(key string) error {
 	return test.repo.DeleteByKey(key)
 }
 
-func RepoToLoginState[bar LoginState](repo utils.Repository[string, bar]) utils.Cache[string, *webauthn.LoginResponse] {
+func RepoToLoginState[bar LoginState](repo core.Repository[string, bar]) core.Cache[string, *webauthn.LoginResponse] {
 	return &loginStateCache[bar]{
 		repo: repo,
 	}
 }
 
 type registerStateCache[bar RegisterState] struct {
-	repo utils.Repository[string, bar]
+	repo core.Repository[string, bar]
 }
 
 func (test *registerStateCache[bar]) Get(key string) (*webauthn.RegisterResponse, error) {
@@ -153,7 +153,7 @@ func (test *registerStateCache[bar]) Delete(key string) error {
 	return test.repo.DeleteByKey(key)
 }
 
-func RepoToRegisterState[bar RegisterState](repo utils.Repository[string, bar]) utils.Cache[string, *webauthn.RegisterResponse] {
+func RepoToRegisterState[bar RegisterState](repo core.Repository[string, bar]) core.Cache[string, *webauthn.RegisterResponse] {
 	return &registerStateCache[bar]{
 		repo: repo,
 	}

@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/secret"
-	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
 )
 
 type TokenController struct {
 	authorizationController
-	codeState           utils.ReadCache[string, *AuthorizationRequest]
+	codeState           core.ReadCache[string, *AuthorizationRequest]
 	accessTokenService  jwt.JwtService[secret.KeyPair]
 	refreshTokenService jwt.JwtService[secret.SecretString]
 }

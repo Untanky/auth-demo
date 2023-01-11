@@ -3,7 +3,6 @@ package webauthn
 import (
 	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/oauth2"
-	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,9 +13,9 @@ type WebAuthnModule struct {
 func Init(
 	conf *Config,
 	userRepo UserRepository,
-	registerState utils.Cache[string, *RegisterResponse],
-	loginState utils.Cache[string, *LoginResponse],
-	authNState utils.ReadCache[string, *oauth2.AuthorizationRequest],
+	registerState core.Cache[string, *RegisterResponse],
+	loginState core.Cache[string, *LoginResponse],
+	authNState core.ReadCache[string, *oauth2.AuthorizationRequest],
 	authorizationFinisher AuthorizationFinisher,
 ) (receiver core.Module) {
 	webauthnService := CreateWebAuthn(

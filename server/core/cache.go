@@ -1,4 +1,4 @@
-package utils
+package core
 
 type ReadCache[key comparable, value any] interface {
 	Get(key) (value, error)

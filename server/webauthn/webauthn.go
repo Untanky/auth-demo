@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/Untanky/iam-auth/utils"
+	"github.com/Untanky/iam-auth/core"
+	"github.com/Untanky/iam-auth/utils"
 )
 
 const (
@@ -14,17 +15,17 @@ const (
 )
 
 type RegisterRequest struct {
-	Id       string              `json:"id"`
-	Type     string              `json:"type"`
-	RawId    URLEncodedBase64    `json:"rawId"`
-	Response AttestationResponse `json:"response"`
+	Id       string                 `json:"id"`
+	Type     string                 `json:"type"`
+	RawId    utils.URLEncodedBase64 `json:"rawId"`
+	Response AttestationResponse    `json:"response"`
 }
 
 type LoginRequest struct {
-	Id       string            `json:"id"`
-	Type     string            `json:"type"`
-	RawId    URLEncodedBase64  `json:"rawId"`
-	Response AssertionResponse `json:"response"`
+	Id       string                 `json:"id"`
+	Type     string                 `json:"type"`
+	RawId    utils.URLEncodedBase64 `json:"rawId"`
+	Response AssertionResponse      `json:"response"`
 }
 
 type AuthenticateRequest struct {
@@ -76,8 +77,8 @@ type PublicKeyCredentialParameter struct {
 }
 
 type WebAuthn struct {
-	loginState      WriteCache[string, *LoginResponse]
-	registerState   Cache[string, *RegisterResponse]
+	loginState      core.WriteCache[string, *LoginResponse]
+	registerState   core.Cache[string, *RegisterResponse]
 	relyingParty    *RelyingParty
 	authenticator   string // convert to enum
 	credentialTypes []*PublicKeyCredentialParameter
@@ -87,8 +88,8 @@ func CreateWebAuthn(
 	relyingParty *RelyingParty,
 	authenticator string,
 	credentialTypes []*PublicKeyCredentialParameter,
-	registerState Cache[string, *RegisterResponse],
-	loginState Cache[string, *LoginResponse],
+	registerState core.Cache[string, *RegisterResponse],
+	loginState core.Cache[string, *LoginResponse],
 ) *WebAuthn {
 	return &WebAuthn{
 		relyingParty:    relyingParty,

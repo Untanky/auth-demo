@@ -9,7 +9,7 @@ import (
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/secret"
 
-	"github.com/Untanky/iam-auth/utils"
+	"github.com/Untanky/iam-auth/core"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slices"
 )
@@ -18,8 +18,8 @@ const AuthenticationEndpoint = "/"
 
 type AuthorizeController struct {
 	authorizationController
-	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest]
-	codeAuthorizationState      utils.WriteCache[string, *AuthorizationRequest]
+	challengeAuthorizationState core.WriteCache[string, *AuthorizationRequest]
+	codeAuthorizationState      core.WriteCache[string, *AuthorizationRequest]
 	accessTokenService          jwt.JwtService[secret.KeyPair]
 }
 

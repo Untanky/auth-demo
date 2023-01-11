@@ -1,6 +1,7 @@
 package oauth2
 
 import (
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/jwt"
 	"github.com/Untanky/iam-auth/secret"
 	"github.com/Untanky/iam-auth/utils"
@@ -13,9 +14,9 @@ type OAuth2Module struct {
 }
 
 func Init(
-	clientRepo utils.Repository[ClientID, *Client],
-	challengeAuthorizationState utils.WriteCache[string, *AuthorizationRequest],
-	codeAuthorizationState utils.Cache[string, *AuthorizationRequest],
+	clientRepo core.Repository[ClientID, *Client],
+	challengeAuthorizationState core.WriteCache[string, *AuthorizationRequest],
+	codeAuthorizationState core.Cache[string, *AuthorizationRequest],
 	accessTokenService jwt.JwtService[secret.KeyPair],
 	refreshTokenService jwt.JwtService[secret.SecretString],
 	logger utils.Logger,

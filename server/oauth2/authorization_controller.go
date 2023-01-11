@@ -1,12 +1,13 @@
 package oauth2
 
 import (
+	"github.com/Untanky/iam-auth/core"
 	"github.com/Untanky/iam-auth/utils"
 	"github.com/gin-gonic/gin"
 )
 
 type authorizationController struct {
-	clientRepo utils.ViewRepository[ClientID, *Client]
+	clientRepo core.ViewRepository[ClientID, *Client]
 	logger     utils.Logger
 }
 

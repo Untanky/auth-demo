@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -129,21 +130,24 @@ func decodePublicPem(pemString string) (interface{}, error) {
 func decodePrivatePem(pemString string) (interface{}, error) {
 	block, _ := pem.Decode([]byte(pemString))
 	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the public key")
+		return nil, errors.New("failed to parse PEM block containing the private key")
 	}
 
-	pub, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	private, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, errors.New("failed to parse DER encoded public key: " + err.Error())
+		return nil, errors.New("failed to parse DER encoded private key: " + err.Error())
 	}
-	return pub, nil
+	return private, nil
 }
 
 func CreateJwt(method signingMethod, data payload, key string) (Jwt, error) {
 	signing := convertSigningMethod(method)
 	token := jwt.NewWithClaims(signing, jwt.MapClaims(data))
-	decodedKey, _ := decodeKey(method, key)
+	decodedKey, err := decodeKey(method, key)
+	fmt.Println(err)
 	tokenString, err := token.SignedString(decodedKey)
+
+	fmt.Println(err)
 
 	return Jwt(tokenString), err
 }

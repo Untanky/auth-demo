@@ -1,4 +1,4 @@
-package utils
+package core
 
 type ViewRepository[id comparable, value any] interface {
 	FindByID(id) (value, error)
