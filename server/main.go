@@ -54,7 +54,7 @@ func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module
 			ID:                   "abc",
 			Name:                 "Test",
 			AuthenticationMethod: oauth2.ClientAuthenticationNone,
-			RedirectionURIs:      []string{"http://localhost:8080/finish"},
+			RedirectionURIs:      []string{"http://localhost:3000/finish"},
 			ResponseTypes:        []oauth2.ResponseType{oauth2.ResponseTypeCode, oauth2.ResponseTypeToken},
 			GrantTypes:           []oauth2.GrantType{oauth2.GrantTypeAuthorizationCode, oauth2.GrantTypeClientCredentials, oauth2.GrantTypePassword},
 		},

@@ -16,7 +16,7 @@ export const authenticate = async (identifier: string): Promise<AuthenticationRe
   const challenge = new URLSearchParams(window.location.search).get('challenge');
   const body = JSON.stringify({ identifier, challenge });
   const response = await fetch(
-    AUTHENTICATE_URL, 
+    `${AUTHENTICATE_URL}/init`, 
     {
       method: 'POST', 
       headers: {

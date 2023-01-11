@@ -14,8 +14,7 @@
   },
   "authenticator": "both",
   "cors": {
-    "origins": ["http://localhost:5173"],
-    "headers": ["Next-Step"]
+    "origins": ["http://localhost:3000"]
   },
   "port": 8080
 }

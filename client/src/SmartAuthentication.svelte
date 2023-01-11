@@ -23,8 +23,8 @@
 <template>
 {#if loggedIn === false}
   <div>
-    <h1 class="text-lg font-semibold">Sign in</h1>
-    <p class="pt-2 text-zinc-700 dark:text-zinc-300">To authenticate You, please enter Your account identifier.</p>
+    <h1 class="text-2xl text-center font-semibold">Sign in</h1>
+    <p class="pt-8 text-zinc-700 dark:text-zinc-300">To authenticate You, please enter Your account identifier.</p>
     <LoginForm on:authenticate={onAuthenticate}></LoginForm>
   </div>
 {:else}
