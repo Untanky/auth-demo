@@ -148,7 +148,7 @@ func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module
 		userRepo,
 		challenge.RepoToRegisterState[*challenge.Challenge](challengeRepo),
 		challenge.RepoToLoginState[*challenge.Challenge](challengeRepo),
-		oauth2Module.AuthorizeController,
+		oauth2Module.FinishAuthorization,
 	)
 
 	return oauth2Module, webauthnModule

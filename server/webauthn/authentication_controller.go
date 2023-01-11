@@ -31,7 +31,7 @@ func (controller *AuthenticationController) Init(
 	controller.authorizationFinisher = authorizationFinisher
 }
 
-func (controller *AuthenticationController) Authenticate(c *gin.Context) {
+func (controller *AuthenticationController) InitAuthenticate(c *gin.Context) {
 	body := AuthenticateRequest{}
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

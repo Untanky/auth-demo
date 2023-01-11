@@ -160,9 +160,12 @@ func (webauthn *WebAuthn) verifyCreateCredentials(challenge *RegisterResponse, a
 		return fmt.Errorf("No valid challenge found")
 	}
 
-	err := webauthn.verifyClientData(attestationResponse.ClientData)
-	if err != nil {
-		return err
+	if attestationResponse.ClientData.Type != webAuthnCreate {
+		return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", attestationResponse.ClientData.Type)
+	}
+
+	if !strings.Contains(attestationResponse.ClientData.Origin, webauthn.relyingParty.Id) {
+		return fmt.Errorf("Origin is not allowed; got '%s'", attestationResponse.ClientData.Origin)
 	}
 
 	// TODO: Check attstObj.AuthnData
@@ -171,40 +174,10 @@ func (webauthn *WebAuthn) verifyCreateCredentials(challenge *RegisterResponse, a
 
 	// TODO: Implemented https://w3c.github.io/webauthn/#sctn-fido-u2f-attestation
 
-	err = webauthn.verifyKeyAlgorithm(attestationResponse)
-	if err != nil {
-		return err
-	}
-
-	err = webauthn.verifySignature(attestationResponse)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (webauthn *WebAuthn) verifyClientData(clientData ClientData) error {
-	if clientData.Type != webAuthnCreate {
-		return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", clientData.Type)
-	}
-
-	if !strings.Contains(clientData.Origin, webauthn.relyingParty.Id) {
-		return fmt.Errorf("Origin is not allowed; got '%s'", clientData.Origin)
-	}
-
-	return nil
-}
-
-func (webauthn *WebAuthn) verifyKeyAlgorithm(attestationResponse AttestationResponse) error {
 	if attestationResponse.PublicKey.GetAlgorithm() != attestationResponse.AttestationObject.AttStmt.Algorithm {
 		return fmt.Errorf("Algorithms do not match %d != %d", attestationResponse.PublicKey.GetAlgorithm(), attestationResponse.AttestationObject.AttStmt.Algorithm)
 	}
 
-	return nil
-}
-
-func (webauthn *WebAuthn) verifySignature(attestationResponse AttestationResponse) error {
 	ok, err := attestationResponse.PublicKey.Verify(attestationResponse.VerificationData, attestationResponse.AttestationObject.AttStmt.Signature)
 	if err != nil {
 		return err
@@ -212,6 +185,7 @@ func (webauthn *WebAuthn) verifySignature(attestationResponse AttestationRespons
 	if !ok {
 		return fmt.Errorf("Something went wrong")
 	}
+
 	return nil
 }
 
@@ -223,38 +197,21 @@ func (webauthn *WebAuthn) FinishLogin(loginRequest *LoginRequest, loginResponse 
 		}
 	}
 
-	err := webauthn.verifyClientDataForLogin(&loginRequest.Response)
-	if err != nil {
-		return err
+	if loginRequest.Response.ClientData.Type != webAuthnGet {
+		return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", loginRequest.Response.ClientData.Type)
 	}
 
-	err = webauthn.verifySignatureForLogin(&loginRequest.Response, publicKey)
-	if err != nil {
-		return err
+	if !strings.Contains(loginRequest.Response.ClientData.Origin, "localhost") {
+		return fmt.Errorf("Origin is not allowed; got '%s'", loginRequest.Response.ClientData.Origin)
 	}
 
-	return nil
-}
-
-func (webauthn *WebAuthn) verifyClientDataForLogin(response *AssertionResponse) error {
-	if response.ClientData.Type != webAuthnGet {
-		return fmt.Errorf("Response type is not 'webauthn.create'; instead found: '%s'", response.ClientData.Type)
-	}
-
-	if !strings.Contains(response.ClientData.Origin, "localhost") {
-		return fmt.Errorf("Origin is not allowed; got '%s'", response.ClientData.Origin)
-	}
-
-	return nil
-}
-
-func (webauthn *WebAuthn) verifySignatureForLogin(response *AssertionResponse, publicKey keys.PublicKey) error {
-	ok, err := publicKey.Verify(response.VerificationData, response.Signature)
+	ok, err := publicKey.Verify(loginRequest.Response.VerificationData, loginRequest.Response.Signature)
 	if err != nil {
 		return err
 	}
 	if !ok {
 		return fmt.Errorf("Something went wrong")
 	}
+
 	return nil
 }

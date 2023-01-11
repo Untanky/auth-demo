@@ -8,11 +8,11 @@ type OAuth2Error struct {
 	// OPTIONAL. Human-readable ASCII text providing
 	// additional information, used to assist the client developer in
 	// understanding the error that occurred.
-	ErrorDescription string `json:"error_description;omitempty" form:"error_description;omitempty"`
+	ErrorDescription string `json:"error_description,omitempty" form:"error_description,omitempty"`
 	// OPTIONAL. A URI identifying a human-readable web page with
 	// information about the error, used to provide the client
 	// developer with additional information about the error.
-	ErrorURI string `json:"error_uri;omitempty" form:"error_uri;omitempty"`
+	ErrorURI string `json:"error_uri,omitempty" form:"error_uri,omitempty"`
 	// The status code associated with the error
 	StatusCode int `json:"status"`
 }
@@ -84,5 +84,5 @@ var TemporarilyUnavailable = OAuth2Error{
 type ErrorResponse struct {
 	OAuth2Error
 	// REQUIRED if the "state" parameter was present in the client authorization request.
-	State string `json:"state;omitempty" form:"state'omitempty"`
+	State string `json:"state,omitempty" form:"state'omitempty"`
 }

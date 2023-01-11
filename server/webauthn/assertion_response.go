@@ -9,16 +9,16 @@ import (
 
 // AssertionResponse is the response to a register or login request done on the client.
 type AssertionResponse struct {
-	ClientData        ClientData        `json:"clientDataJSON`
-	AuthenticatorData AuthenticatorData `json:"authenticatorData`
+	ClientData        ClientData        `json:"clientDataJSON"`
+	AuthenticatorData AuthenticatorData `json:"authenticatorData"`
 	Signature         []byte            `json:"signature"`
 	UserHandle        string            `json:"userHandle"`
 	VerificationData  []byte
 }
 
 type rawAssertionResponse struct {
-	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON`
-	AuthenticatorData URLEncodedBase64 `json:"authenticatorData`
+	ClientDataJSON    URLEncodedBase64 `json:"clientDataJSON"`
+	AuthenticatorData URLEncodedBase64 `json:"authenticatorData"`
 	Signature         URLEncodedBase64 `json:"signature"`
 	UserHandle        URLEncodedBase64 `json:"userHandle"`
 }

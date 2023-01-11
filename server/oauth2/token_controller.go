@@ -117,7 +117,6 @@ func (controller *TokenController) authenticate(client *Client, c *gin.Context) 
 		client = basicClient
 		return true
 	}
-	fmt.Println("AUTH", client)
 
 	switch client.AuthenticationMethod {
 	case ClientSecretBasic:

@@ -35,7 +35,7 @@ func Init(
 }
 
 func (module *WebAuthnModule) SetupRouter(router gin.IRouter) {
-	router.POST("/init", module.controller.Authenticate)
+	router.POST("/init", module.controller.InitAuthenticate)
 	router.POST("/register", module.controller.Register)
 	router.POST("/login", module.controller.Login)
 }

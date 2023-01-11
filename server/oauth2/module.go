@@ -8,8 +8,9 @@ import (
 )
 
 type OAuth2Module struct {
-	AuthorizeController *AuthorizeController
+	authorizeController *AuthorizeController
 	tokenController     *TokenController
+	FinishAuthorization core.AuthorizationFinisher
 }
 
 func Init(
@@ -42,12 +43,13 @@ func Init(
 
 	return &OAuth2Module{
 		tokenController:     tokenController,
-		AuthorizeController: authorizeController,
+		authorizeController: authorizeController,
+		FinishAuthorization: authorizeController,
 	}
 }
 
 func (module *OAuth2Module) SetupRouter(router gin.IRouter) {
-	router.GET("/authorize", module.AuthorizeController.StartAuthorization)
-	router.POST("/authorize", module.AuthorizeController.StartAuthorization)
+	router.GET("/authorize", module.authorizeController.StartAuthorization)
+	router.POST("/authorize", module.authorizeController.StartAuthorization)
 	router.POST("/token", module.tokenController.CreateAccessToken)
 }
