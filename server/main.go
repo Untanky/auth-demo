@@ -114,6 +114,8 @@ func createAuthorizationService(conf *webauthn.Config) (core.Module, core.Module
 	fmt.Println("Public", string(pubPEM))
 	fmt.Println("Private", string(keyPEM))
 
+	
+
 	accessTokenService := jwt.JwtService[secret.KeyPair]{
 		Method: jwt.RS256,
 		Secret: secret.NewSecretPair(secret.KeyPair{

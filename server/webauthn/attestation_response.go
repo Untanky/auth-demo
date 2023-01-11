@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
+	"github.com/Untanky/iam-auth/keys"
 	. "github.com/Untanky/iam-auth/utils"
 	"github.com/fxamacker/cbor"
 )
@@ -13,7 +14,7 @@ type AttestationResponse struct {
 	AttestationObject AttestationObject
 	ClientData        ClientData
 	VerificationData  []byte
-	PublicKey         PublicKey
+	PublicKey         keys.PublicKey
 }
 
 type rawAttestationResponse struct {
@@ -42,7 +43,7 @@ func (response *AttestationResponse) UnmarshalJSON(b []byte) error {
 	hash.Write(rawResponse.ClientDataJSON)
 	response.VerificationData = append(response.AttestationObject.RawAuthnData, hash.Sum(nil)...)
 
-	key, err := ParsePublicKey(response.AttestationObject.AuthnData.AttData.CredentialPublicKey)
+	key, err := keys.ParsePublicKey(response.AttestationObject.AuthnData.AttData.CredentialPublicKey)
 	response.PublicKey = key
 
 	return nil

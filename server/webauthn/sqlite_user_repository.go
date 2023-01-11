@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Untanky/iam-auth/keys"
 	"github.com/fxamacker/cbor"
 )
 
@@ -27,7 +28,7 @@ func (repo *SqliteUserRepository) FindByIdentifier(identifier string) (*User, er
 		var transports string
 		rows.Scan(&credential.Id, &publicKey, &credential.Type, &transports)
 
-		credential.PublicKey, _ = ParsePublicKey(publicKey)
+		credential.PublicKey, _ = keys.ParsePublicKey(publicKey)
 		credential.Transports = strings.Split(transports, ",")
 
 		crendentials = append(crendentials, credential)

@@ -1,10 +1,14 @@
 package webauthn
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Untanky/iam-auth/keys"
+)
 
 type Credential struct {
 	Id         []byte
-	PublicKey  PublicKey
+	PublicKey  keys.PublicKey
 	Type       string
 	Transports []string
 }

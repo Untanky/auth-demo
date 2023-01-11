@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Untanky/iam-auth/core"
+	"github.com/Untanky/iam-auth/keys"
 	"github.com/Untanky/iam-auth/utils"
 )
 
@@ -215,7 +216,7 @@ func (webauthn *WebAuthn) verifySignature(attestationResponse AttestationRespons
 }
 
 func (webauthn *WebAuthn) FinishLogin(loginRequest *LoginRequest, loginResponse *LoginResponse, user *User) error {
-	var publicKey PublicKey
+	var publicKey keys.PublicKey
 	for i := 0; i < len(user.Credentials); i++ {
 		if string(user.Credentials[i].Id) == string(loginRequest.RawId) {
 			publicKey = user.Credentials[i].PublicKey
@@ -247,7 +248,7 @@ func (webauthn *WebAuthn) verifyClientDataForLogin(response *AssertionResponse) 
 	return nil
 }
 
-func (webauthn *WebAuthn) verifySignatureForLogin(response *AssertionResponse, publicKey PublicKey) error {
+func (webauthn *WebAuthn) verifySignatureForLogin(response *AssertionResponse, publicKey keys.PublicKey) error {
 	ok, err := publicKey.Verify(response.VerificationData, response.Signature)
 	if err != nil {
 		return err

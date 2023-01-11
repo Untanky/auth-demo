@@ -1,15 +1,9 @@
-package webauthn
+package keys
 
 import (
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/elliptic"
-	"crypto/rsa"
-	"encoding/asn1"
 	"errors"
 	"hash"
-	"math/big"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -122,122 +116,6 @@ type PublicKeyData struct {
 func (key *PublicKeyData) GetAlgorithm() int {
 	return key.Algorithm
 }
-
-type EC2PublicKeyData struct {
-	PublicKeyData
-	// If the key type is EC2, the curve on which we derive the signature from.
-	Curve int64 `cbor:"-1,keyasint,omitempty" json:"crv"`
-	// A byte string 32 bytes in length that holds the x coordinate of the key.
-	XCoord []byte `cbor:"-2,keyasint,omitempty" json:"x"`
-	// A byte string 32 bytes in length that holds the y coordinate of the key.
-	YCoord []byte `cbor:"-3,keyasint,omitempty" json:"y"`
-}
-
-// Verify Elliptic Curce Public PublicKey Signature
-func (k *EC2PublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
-	var curve elliptic.Curve
-	switch COSEAlgorithmIdentifier(k.Algorithm) {
-	case AlgES512: // IANA COSE code for ECDSA w/ SHA-512
-		curve = elliptic.P521()
-	case AlgES384: // IANA COSE code for ECDSA w/ SHA-384
-		curve = elliptic.P384()
-	case AlgES256: // IANA COSE code for ECDSA w/ SHA-256
-		curve = elliptic.P256()
-	default:
-		return false, errors.New("unsupported algorithm")
-	}
-
-	pubkey := &ecdsa.PublicKey{
-		Curve: curve,
-		X:     big.NewInt(0).SetBytes(k.XCoord),
-		Y:     big.NewInt(0).SetBytes(k.YCoord),
-	}
-
-	type ECDSASignature struct {
-		R, S *big.Int
-	}
-
-	e := &ECDSASignature{}
-	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
-	h := f()
-	h.Write(data)
-	_, err := asn1.Unmarshal(sig, e)
-	if err != nil {
-		return false, errors.New("Signature not provided or nul")
-	}
-	return ecdsa.Verify(pubkey, h.Sum(nil), e.R, e.S), nil
-}
-
-type RSAPublicKeyData struct {
-	PublicKeyData
-	// Represents the modulus parameter for the RSA algorithm
-	Modulus []byte `cbor:"-1,keyasint,omitempty" json:"n"`
-	// Represents the exponent parameter for the RSA algorithm
-	Exponent []byte `cbor:"-2,keyasint,omitempty" json:"e"`
-}
-
-// Verify RSA Public PublicKey Signature
-func (k *RSAPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
-	pubkey := &rsa.PublicKey{
-		N: big.NewInt(0).SetBytes(k.Modulus),
-		E: int(uint(k.Exponent[2]) | uint(k.Exponent[1])<<8 | uint(k.Exponent[0])<<16),
-	}
-
-	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
-	h := f()
-	h.Write(data)
-
-	var hash crypto.Hash
-	switch COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm) {
-	case AlgRS1:
-		hash = crypto.SHA1
-	case AlgPS256, AlgRS256:
-		hash = crypto.SHA256
-	case AlgPS384, AlgRS384:
-		hash = crypto.SHA384
-	case AlgPS512, AlgRS512:
-		hash = crypto.SHA512
-	default:
-		return false, errors.New("unsupported algorithm")
-	}
-	switch COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm) {
-	case AlgPS256, AlgPS384, AlgPS512:
-		err := rsa.VerifyPSS(pubkey, hash, h.Sum(nil), sig, nil)
-		return err == nil, err
-
-	case AlgRS1, AlgRS256, AlgRS384, AlgRS512:
-		err := rsa.VerifyPKCS1v15(pubkey, hash, h.Sum(nil), sig)
-		return err == nil, err
-	default:
-		return false, errors.New("unsupported algorithm")
-	}
-}
-
-type OKPPublicKeyData struct {
-	PublicKeyData
-	Curve int64
-	// A byte string that holds the x coordinate of the key.
-	XCoord []byte `cbor:"-2,keyasint,omitempty" json:"x"`
-}
-
-// Verify Octet PublicKey Pair (OKP) Public PublicKey Signature
-func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
-	var key ed25519.PublicKey = make([]byte, ed25519.PublicKeySize)
-	copy(key, k.XCoord)
-	return ed25519.Verify(key, data, sig), nil
-}
-
-// The PublicKey Type derived from the IANA COSE AuthData
-type COSEKeyType int
-
-const (
-	// OctetKey is an Octet PublicKey
-	OctetKey COSEKeyType = 1
-	// EllipticKey is an Elliptic Curve Public PublicKey
-	EllipticKey COSEKeyType = 2
-	// RSAKey is an RSA Public PublicKey
-	RSAKey COSEKeyType = 3
-)
 
 // Figure out what kind of COSE material was provided and create the data for the new key
 func ParsePublicKey(keyBytes []byte) (PublicKey, error) {
