@@ -6,12 +6,12 @@ WORKDIR /tmp/webauthn-demo
 RUN apk add --no-cache git build-base
 
 # We want to populate the module cache based on the go.{mod,sum} files.
-COPY server/go.mod .
-COPY server/go.sum .
+COPY go.mod .
+COPY go.sum .
 
 RUN go mod download
 
-COPY server .
+COPY . .
 
 # Build the Go app
 RUN go build -tags prod -o ./out/webauthn-demo .
